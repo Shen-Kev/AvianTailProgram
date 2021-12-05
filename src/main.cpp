@@ -65,7 +65,12 @@ void setup()
 {
   pinMode(stabilizedPitchInputPin, INPUT);
   pinMode(stabilizedYawInputPin, INPUT);
-  pinMode(stabilizedPitchInputPin, INPUT);
+  pinMode(stabilizedRollInputPin, INPUT);
+  pinMode(elevatorServoPin, OUTPUT);
+  pinMode(rotatorServoPin, OUTPUT);
+  pinMode(rightElevonServoPin, OUTPUT);
+  pinMode(leftElevonServoPin, OUTPUT);
+
   elevatorServo.attach(elevatorServoPin);
   rotatorServo.attach(rotatorServoPin);
   rightElevonServo.attach(rightElevonServoPin);
