@@ -22,9 +22,9 @@ Servo rightElevonServo;
 Servo leftElevonServo;
 
 //configurations!
-const bool flyingWing = false;
+const bool flyingWing = true;
 const bool fullBorb = false;
-const bool noSpread = true;
+const bool noSpread = false;
 
 const float deadZone = 10;
 
@@ -218,7 +218,7 @@ void loop()
     }
     configurationNoSpreadTailElevonWrite();
   }
-  //serialOutput();
+  serialOutput();
 }
 
 
