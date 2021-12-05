@@ -132,6 +132,7 @@ void justElevons()
   leftElevonServoOutput = ((stabilizedPitch - stabilizedRoll) / elevonDampener) + 90;
 }
 
+
 void elevonWithTail()
 {
   rightElevonServoOutput = ((0 + stabilizedRoll) / elevonDampener) + tailElevonOffset + 90;
@@ -147,7 +148,7 @@ void elevonAsAileron()
   leftElevonServoOutput = 90 - (stabilizedRoll / elevonDampener);
 }
 
-void configurationNoSpreadTailElevonWrite()
+void write()
 {
   elevatorServo.write(elevatorServoOutput + elevatorServoOutputTrim);
   rotatorServo.write(rotatorServoOutput + rotatorServoOutputTrim);
@@ -177,7 +178,7 @@ void serialOutput()
   Serial.println(leftElevonServoOutput);
 }
 
-void spreadCalc() 
+void spreadCalc()
 {
   //to be implemented
 }
@@ -216,9 +217,7 @@ void loop()
       justPitch();
       elevonAsAileron();
     }
-    configurationNoSpreadTailElevonWrite();
   }
+  write();
   serialOutput();
 }
-
-
