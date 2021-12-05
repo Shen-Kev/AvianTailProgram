@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-//PINS
+//PINS  //HIIIIIIIIIIIII
 #define S3PIN 2
 #define S4PIN 3
 #define S5PIN 4
@@ -15,7 +15,7 @@
 #define SERVO5PIN 15
 #define SERVO6PIN 14
 
-#include <Servo.h>
+#include <Servo.h> asdfasdfasdf 5
 Servo elevatorServo;
 Servo rotatorServo;
 Servo rightElevonServo;
