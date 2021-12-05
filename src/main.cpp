@@ -110,7 +110,6 @@ void tailMovement()
   else
   {
     //deflect servo to the point that we actually get correct yaw output (0.707 is the cos(45 deg))
-
     elevatorServoOutput = -abs(stabilizedYaw / 0.707) + 90;
 
     //figure out the extra pitch (pitch generated - pitch required (stabilzed pitch). pitch generated is tan(45 deg) times stabilized yaw force, tan (45 deg) is 1, so pitch generated = stabilizedYaw force generated.
@@ -178,7 +177,7 @@ void serialOutput()
   Serial.println(leftElevonServoOutput);
 }
 
-void spreadCalc() //hi
+void spreadCalc() 
 {
   //to be implemented
 }
