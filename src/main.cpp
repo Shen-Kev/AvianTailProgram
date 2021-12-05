@@ -188,12 +188,16 @@ void tailAdjustForSpread()
   //to be implemented
 }
 
-void loop()
-{
+void rxInput() {
   stabilizedPitch = map(pulseIn(stabilizedPitchInputPin, HIGH), 1000, 2000, -90, 90);
   stabilizedYaw = map(pulseIn(stabilizedYawInputPin, HIGH), 1000, 2000, -90, 90);
   stabilizedRoll = map(pulseIn(stabilizedRollInputPin, HIGH), 1000, 2000, -90, 90);
-  MODE = pulseIn(MODEInputPin, HIGH);
+  MODE = pulseIn(MODEInputPin, HIGH);  
+}
+
+void loop()
+{
+  rxInput();
 
   if (flyingWing)
   {
@@ -218,6 +222,6 @@ void loop()
       elevonAsAileron();
     }
   }
-  //write();
-  serialOutput();
+  write();
+  //serialOutput();
 }
