@@ -21,7 +21,7 @@ Servo rotatorServo;
 Servo rightElevonServo;
 Servo leftElevonServo;
 
-//configurations
+//configurations!
 const bool flyingWing = false;
 const bool fullBorb = false;
 const bool noSpread = true;
