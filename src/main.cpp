@@ -15,7 +15,7 @@
 #define SERVO5PIN 15
 #define SERVO6PIN 14
 
-#include <Servo.h> asdfasdfasdf 5
+#include <Servo.h>
 Servo elevatorServo;
 Servo rotatorServo;
 Servo rightElevonServo;
@@ -157,20 +157,20 @@ void configurationNoSpreadTailElevonWrite()
 
 void serialOutput()
 {
-  Serial.print("  isOptimum: ");
-  Serial.print(isOptimum);
-  Serial.print(" issue tester: ");
-  Serial.print(abs(stabilizedYaw / 0.707) + 90);
-  Serial.print("  stabilizedYaw: ");
-  Serial.print(stabilizedYaw);
-  Serial.print("  stabilizedPitch: ");
-  Serial.print(stabilizedPitch);
-  Serial.print("  tailElevonOffset: ");
-  Serial.print(tailElevonOffset);
-  Serial.print("  elevator: ");
-  Serial.print(elevatorServoOutput);
-  Serial.print("  rotator: ");
-  Serial.print(rotatorServoOutput);
+  // Serial.print("  isOptimum: ");
+  // Serial.print(isOptimum);
+  // Serial.print(" issue tester: ");
+  // Serial.print(abs(stabilizedYaw / 0.707) + 90);
+  // Serial.print("  stabilizedYaw: ");
+  // Serial.print(stabilizedYaw);
+  // Serial.print("  stabilizedPitch: ");
+  // Serial.print(stabilizedPitch);
+  // Serial.print("  tailElevonOffset: ");
+  // Serial.print(tailElevonOffset);
+  // Serial.print("  elevator: ");
+  // Serial.print(elevatorServoOutput);
+  // Serial.print("  rotator: ");
+  // Serial.print(rotatorServoOutput);
   Serial.print("  right elevon: ");
   Serial.print(rightElevonServoOutput);
   Serial.print("  left elevon: ");
