@@ -218,6 +218,6 @@ void loop()
       elevonAsAileron();
     }
   }
-  write();
-  //serialOutput();
+  //write();
+  serialOutput();
 }
