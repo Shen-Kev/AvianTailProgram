@@ -71,7 +71,7 @@ void setup()
   rightElevonServo.attach(rightElevonServoPin);
   leftElevonServo.attach(leftElevonServoPin);
 
-  Serial.begin(115200);
+  //Serial.begin(115200);
 }
 
 float radian(float input)
@@ -158,20 +158,20 @@ void write()
 
 void serialOutput()
 {
-  // Serial.print("  isOptimum: ");
-  // Serial.print(isOptimum);
-  // Serial.print(" issue tester: ");
-  // Serial.print(abs(stabilizedYaw / 0.707) + 90);
-  // Serial.print("  stabilizedYaw: ");
-  // Serial.print(stabilizedYaw);
-  // Serial.print("  stabilizedPitch: ");
-  // Serial.print(stabilizedPitch);
-  // Serial.print("  tailElevonOffset: ");
-  // Serial.print(tailElevonOffset);
-  // Serial.print("  elevator: ");
-  // Serial.print(elevatorServoOutput);
-  // Serial.print("  rotator: ");
-  // Serial.print(rotatorServoOutput);
+  Serial.print("  isOptimum: ");
+  Serial.print(isOptimum);
+  Serial.print(" issue tester: ");
+  Serial.print(abs(stabilizedYaw / 0.707) + 90);
+  Serial.print("  stabilizedYaw: ");
+  Serial.print(stabilizedYaw);
+  Serial.print("  stabilizedPitch: ");
+  Serial.print(stabilizedPitch);
+  Serial.print("  tailElevonOffset: ");
+  Serial.print(tailElevonOffset);
+  Serial.print("  elevator: ");
+  Serial.print(elevatorServoOutput);
+  Serial.print("  rotator: ");
+  Serial.print(rotatorServoOutput);
   Serial.print("  right elevon: ");
   Serial.print(rightElevonServoOutput);
   Serial.print("  left elevon: ");
@@ -219,5 +219,5 @@ void loop()
     }
   }
   write();
-  serialOutput();
+  //serialOutput();
 }
