@@ -7,7 +7,6 @@
 #define S6PIN 5
 #define S7PIN 6
 #define S8PIN 7
-//AAAAAAAAH
 
 #define SERVO1PIN 23
 #define SERVO2PIN 22
