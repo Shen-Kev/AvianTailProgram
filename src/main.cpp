@@ -194,6 +194,8 @@ void tailAdjustForSpread()
 }
 
 void rxInput() {
+
+  //THIS IS THE ISSUE: THIS IS WHAT TAKES TOO LONG AND CAUSES THE SERVO TO BE JERKY. WHEN ONLY ONE IS TAKING IN INPUT IT IS OK BUT IF ALL FOUR ARE GOING IT IS SLOW.
   stabilizedPitch = map(pulseIn(stabilizedPitchInputPin, HIGH), 1000, 2000, -90, 90);
   stabilizedYaw = map(pulseIn(stabilizedYawInputPin, HIGH), 1000, 2000, -90, 90);
   stabilizedRoll = map(pulseIn(stabilizedRollInputPin, HIGH), 1000, 2000, -90, 90);
