@@ -22,9 +22,9 @@ Servo rightElevonServo;
 Servo leftElevonServo;
 
 //configurations!
-const bool flyingWing = true;
+const bool flyingWing = false;
 const bool fullBorb = false;
-const bool noSpread = false;
+const bool noSpread = true;
 
 const float deadZone = 10;
 
@@ -161,6 +161,7 @@ void tailMovement()
 
   elevatorServoOutput = constrain(elevatorServoOutput + elevatorServoOutputTrim, 0, 180);
   rotatorServoOutput = constrain(rotatorServoOutput + rotatorServoOutputTrim, 0, 180);
+  rotatorServoOutput = 180-rotatorServoOutput;
 }
 
 void justPitch()
@@ -171,13 +172,13 @@ void justPitch()
 void justElevons()
 {
   rightElevonServoOutput = ((stabilizedPitch + stabilizedRoll) / elevonDampener) + 90;
-  leftElevonServoOutput = ((stabilizedPitch - stabilizedRoll) / elevonDampener) + 90;
+  leftElevonServoOutput = (((0-stabilizedPitch) + stabilizedRoll) / elevonDampener) + 90;
 }
 
 void elevonWithTail()
 {
-  rightElevonServoOutput = ((0 + stabilizedRoll) / elevonDampener) + tailElevonOffset + 90;
-  leftElevonServoOutput = ((0 - stabilizedRoll) / elevonDampener) + tailElevonOffset + 90;
+  rightElevonServoOutput = ((stabilizedRoll) / elevonDampener) - tailElevonOffset + 90;
+  leftElevonServoOutput = ((stabilizedRoll) / elevonDampener) + tailElevonOffset + 90;
 
   rightElevonServoOutput = constrain(rightElevonServoOutput + rightElevonServoOutputTrim, 0, 180);
   leftElevonServoOutput = constrain(leftElevonServoOutput + leftElevonServoOutputTrim, 0, 180);
@@ -186,7 +187,7 @@ void elevonWithTail()
 void elevonAsAileron()
 {
   rightElevonServoOutput = (stabilizedRoll / elevonDampener) + 90;
-  leftElevonServoOutput = 90 - (stabilizedRoll / elevonDampener);
+  leftElevonServoOutput = (stabilizedRoll / elevonDampener) + 90;
 }
 
 void write()
@@ -283,5 +284,5 @@ void loop()
     }
   }
   write();
-  //serialOutput();
+  serialOutput();
 }
