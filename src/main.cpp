@@ -46,7 +46,7 @@ int leftElevonServoPin = SERVO4PIN;
 float stabilizedPitch;
 float stabilizedYaw;
 float stabilizedRoll;
-int MODE = 0;
+float MODE = 0;
 int stabilizedPitchInputPin = S3PIN;
 int stabilizedYawInputPin = S4PIN;
 int stabilizedRollInputPin = S5PIN;
@@ -61,22 +61,59 @@ bool isOptimum = true;
 float pitchDampener = 2;
 float elevonDampener = 2;
 
-void setup()
+//read pwm using interrupts
+volatile unsigned long PWMTimerStartStabilizedPitch;
+volatile int PWMLastInterruptTimeStabilizedPitch;
+
+volatile unsigned long PWMTimerStartStabilizedYaw;
+volatile int PWMLastInterruptTimeStabilizedYaw;
+
+volatile unsigned long PWMTimerStartStabilizedRoll;
+volatile int PWMLastInterruptTimeStabilizedRoll;
+
+volatile unsigned long PWMTimerStartMODE;
+volatile int PWMLastInterruptTimeMODE;
+
+void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterruptTime, volatile unsigned long *timerStart)
 {
-  pinMode(stabilizedPitchInputPin, INPUT);
-  pinMode(stabilizedYawInputPin, INPUT);
-  pinMode(stabilizedRollInputPin, INPUT);
-  pinMode(elevatorServoPin, OUTPUT);
-  pinMode(rotatorServoPin, OUTPUT);
-  pinMode(rightElevonServoPin, OUTPUT);
-  pinMode(leftElevonServoPin, OUTPUT);
+  //record the interrupt time so that we can tell if the receiver has a signal from the transmitter
+  *lastInterruptTime = micros();
 
-  elevatorServo.attach(elevatorServoPin);
-  rotatorServo.attach(rotatorServoPin);
-  rightElevonServo.attach(rightElevonServoPin);
-  leftElevonServo.attach(leftElevonServoPin);
+  //if the pin has gone HIGH, record the microseconds since the Arduino started up
+  if (digitalRead(pinNum) == HIGH)
+  {
+    *timerStart = micros();
+  }
+  //otherwise, the pin has gone LOW
+  else
+  {
 
-  //Serial.begin(115200);
+    //only worry about this if the timer has actually started
+    if (*timerStart != 0)
+    {
+      //record the pulse time
+
+      *channel = map(((volatile int)micros() - *timerStart), 1000, 2000, -90, 90);
+      //restart the timer
+      *timerStart = 0;
+    }
+  }
+}
+void PWMSignalCalculatorStabilizedPitch()
+{
+  PWMSignalCalculator(&stabilizedPitch, stabilizedPitchInputPin, &PWMLastInterruptTimeStabilizedPitch, &PWMTimerStartStabilizedPitch);
+}
+void PWMSignalCalculatorStabilizedYaw()
+{
+  PWMSignalCalculator(&stabilizedYaw, stabilizedYawInputPin, &PWMLastInterruptTimeStabilizedYaw, &PWMTimerStartStabilizedYaw);
+}
+void PWMSignalCalculatorStabilizedRoll()
+{
+  PWMSignalCalculator(&stabilizedRoll, stabilizedRollInputPin, &PWMLastInterruptTimeStabilizedRoll, &PWMTimerStartStabilizedRoll);
+}
+void PWMSignalCalculatorMODE()
+{
+  PWMSignalCalculator(&MODE, MODEInputPin, &PWMLastInterruptTimeMODE, &PWMTimerStartMODE);
 }
 
 float radian(float input)
@@ -137,7 +174,6 @@ void justElevons()
   leftElevonServoOutput = ((stabilizedPitch - stabilizedRoll) / elevonDampener) + 90;
 }
 
-
 void elevonWithTail()
 {
   rightElevonServoOutput = ((0 + stabilizedRoll) / elevonDampener) + tailElevonOffset + 90;
@@ -193,18 +229,35 @@ void tailAdjustForSpread()
   //to be implemented
 }
 
-void rxInput() {
+void setup()
+{
+  pinMode(stabilizedPitchInputPin, INPUT);
+  pinMode(stabilizedYawInputPin, INPUT);
+  pinMode(stabilizedRollInputPin, INPUT);
+  pinMode(elevatorServoPin, OUTPUT);
+  pinMode(rotatorServoPin, OUTPUT);
+  pinMode(rightElevonServoPin, OUTPUT);
+  pinMode(leftElevonServoPin, OUTPUT);
 
-  //THIS IS THE ISSUE: THIS IS WHAT TAKES TOO LONG AND CAUSES THE SERVO TO BE JERKY. WHEN ONLY ONE IS TAKING IN INPUT IT IS OK BUT IF ALL FOUR ARE GOING IT IS SLOW.
-  stabilizedPitch = map(pulseIn(stabilizedPitchInputPin, HIGH), 1000, 2000, -90, 90);
-  stabilizedYaw = map(pulseIn(stabilizedYawInputPin, HIGH), 1000, 2000, -90, 90);
-  stabilizedRoll = map(pulseIn(stabilizedRollInputPin, HIGH), 1000, 2000, -90, 90);
-  MODE = pulseIn(MODEInputPin, HIGH);  
+  PWMTimerStartStabilizedPitch = 0;
+  PWMTimerStartStabilizedRoll = 0;
+  PWMTimerStartStabilizedYaw = 0;
+  PWMTimerStartMODE = 0;
+  attachInterrupt(digitalPinToInterrupt(stabilizedPitchInputPin), PWMSignalCalculatorStabilizedPitch, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(stabilizedRollInputPin), PWMSignalCalculatorStabilizedRoll, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(stabilizedYawInputPin), PWMSignalCalculatorStabilizedYaw, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(MODEInputPin), PWMSignalCalculatorMODE, CHANGE);
+
+  elevatorServo.attach(elevatorServoPin);
+  rotatorServo.attach(rotatorServoPin);
+  rightElevonServo.attach(rightElevonServoPin);
+  leftElevonServo.attach(leftElevonServoPin);
+
+  //Serial.begin(115200);
 }
 
 void loop()
 {
-  rxInput();
 
   if (flyingWing)
   {
@@ -218,12 +271,12 @@ void loop()
   }
   else if (noSpread)
   {
-    if (MODE < 1500) //these two can be switched mid flight and are the same configuration
+    if (MODE < 0) //these two can be switched mid flight and are the same configuration
     {
       tailMovement();
       elevonWithTail();
     }
-    else if (MODE >= 1500)
+    else if (MODE >= 0)
     {
       justPitch();
       elevonAsAileron();
