@@ -1,3 +1,31 @@
+//Teensy Flight Controller- Avian Tail Program- Science Fair Project
+//Author- Kevin Shen
+//Project Start- 11/1/2021
+
+//Credits
+
+//Parts of code structure inspried by Nicholas Rehm
+//Github: https://github.com/nickrehm/dRehmFlight
+
+/*
+ * Nicholas Rehm
+ * Department of Aerospace Engineering
+ * University of Maryland
+ * College Park 20742
+ * Email: nrehm@umd.edu
+ */
+
+//Used MPU6050 Library and I2Cdev by Jeff Rowberg <jeff@rowberg.net>
+//https://github.com/jrowberg/i2cdevlib
+
+//Used standard Arduino SD Library
+//https://www.arduino.cc/en/reference/SD
+
+//NEED TO DO
+//CHANGE SD CARD OUTPUT TO SOMETHING USEFUL
+//INVERT MPU6050 TO GET CORRECT ORIENTATIOON
+//CLEAN UP
+
 #include <Arduino.h>
 #include <Servo.h>
 #include <SPI.h>
@@ -11,17 +39,17 @@ MPU6050 mpu;
 
 //PINS
 #define INTERRUPT_PIN 9
-#define S3PIN 2
-#define S4PIN 3
-#define S5PIN 4
-#define S6PIN 5
-#define S7PIN 6
-#define S8PIN 7
+#define RX1 2
+#define RX2 3
+#define RX3 4
+#define RX4 5
+#define RX5 6
+#define RX6 7
 
 #define SERVO1PIN 23
 #define SERVO2PIN 22
-#define SERVO3PIN 19
-#define SERVO4PIN 18
+#define SERVO3PIN 1
+#define SERVO4PIN 8
 #define SERVO5PIN 15
 #define SERVO6PIN 14
 
@@ -29,11 +57,14 @@ Servo elevatorServo;
 Servo rotatorServo;
 Servo rightElevonServo;
 Servo leftElevonServo;
+Servo leftESC;
+Servo rightESC;
 
-//configurations!
+//CONFIGURATIONS
 const bool flyingWing = false;
 const bool fullBorb = false;
 const bool noSpread = true;
+const bool diffThrust = false;
 
 const float deadZone = 10;
 
@@ -41,6 +72,8 @@ float elevatorServoOutput = 90;
 float rotatorServoOutput = 90;
 float rightElevonServoOutput = 90;
 float leftElevonServoOutput = 90;
+float rightESCOutput = 0;
+float leftESCOutput = 0;
 
 int elevatorServoOutputTrim = 0;
 int rotatorServoOutputTrim = 0;
@@ -51,15 +84,20 @@ int elevatorServoPin = SERVO1PIN;
 int rotatorServoPin = SERVO2PIN;
 int rightElevonServoPin = SERVO3PIN;
 int leftElevonServoPin = SERVO4PIN;
+int rightESCPin = SERVO5PIN;
+int leftESCPin = SERVO6PIN;
 
 float stabilizedPitch;
 float stabilizedYaw;
 float stabilizedRoll;
 float MODE = 0;
-int stabilizedPitchInputPin = S3PIN;
-int stabilizedYawInputPin = S4PIN;
-int stabilizedRollInputPin = S5PIN;
-int MODEInputPin = S6PIN;
+float throttle;
+
+int stabilizedPitchInputPin = RX1;
+int stabilizedYawInputPin = RX2;
+int stabilizedRollInputPin = RX3;
+int MODEInputPin = RX4;
+int throttleInputPin = RX5;
 
 float tailElevonOffset = 0;
 
@@ -69,6 +107,7 @@ bool isOptimum = true;
 
 float pitchDampener = 2;
 float elevonDampener = 2;
+float diffThrustDampener = 3;
 
 // ================================================================
 // ===               MPU6050 STUFF- NOT MY WORK                 ===
@@ -164,7 +203,10 @@ void MPU6050Setup()
     Serial.println(F(")"));
   }
 }
-//MPU6050 STUFFS END
+
+//========================================================================================================================//
+//                                                      FUNCTIONS                                                         //
+//========================================================================================================================//
 
 //read pwm using interrupts
 volatile unsigned long PWMTimerStartStabilizedPitch;
@@ -178,6 +220,9 @@ volatile int PWMLastInterruptTimeStabilizedRoll;
 
 volatile unsigned long PWMTimerStartMODE;
 volatile int PWMLastInterruptTimeMODE;
+
+volatile unsigned long PWMTimerStartThrottle;
+volatile int PWMLastInterruptTimeThrottle;
 
 void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterruptTime, volatile unsigned long *timerStart)
 {
@@ -220,10 +265,26 @@ void PWMSignalCalculatorMODE()
 {
   PWMSignalCalculator(&MODE, MODEInputPin, &PWMLastInterruptTimeMODE, &PWMTimerStartMODE);
 }
+void PWMSignalCalculatorThrottle()
+{
+  PWMSignalCalculator(&throttle, throttleInputPin, &PWMLastInterruptTimeThrottle, &PWMTimerStartThrottle);
+}
 
 float radian(float input)
 {
   return input * (3.1416 / 180);
+}
+
+void ESCDifferentialThrust()
+{
+  leftESCOutput = throttle + (stabilizedYaw / diffThrustDampener);
+  rightESCOutput = throttle - (stabilizedYaw / diffThrustDampener);
+}
+
+void ESCDirectOutput()
+{
+  leftESCOutput = throttle;
+  rightESCOutput = throttle;
 }
 
 void tailMovement()
@@ -301,6 +362,8 @@ void write()
   rotatorServo.write(rotatorServoOutput + rotatorServoOutputTrim);
   rightElevonServo.write(rightElevonServoOutput + rightElevonServoOutputTrim);
   leftElevonServo.write(leftElevonServoOutput + leftElevonServoOutputTrim);
+  rightESC.write(rightESCOutput);
+  leftESC.write(leftESCOutput);
 }
 void serialOutput()
 {
@@ -335,7 +398,7 @@ void tailAdjustForSpread()
 }
 
 void SDSetup()
-{ //NOT MY WORK
+{ 
 
   Serial.print("Initializing SD card...");
 
@@ -400,6 +463,10 @@ void SDOutput()
   myFile.close();
 }
 
+//========================================================================================================================//
+//                                                      VOID SETUP                                                        //
+//========================================================================================================================//
+
 void setup()
 {
   Serial.begin(115200);
@@ -407,33 +474,44 @@ void setup()
   pinMode(stabilizedPitchInputPin, INPUT);
   pinMode(stabilizedYawInputPin, INPUT);
   pinMode(stabilizedRollInputPin, INPUT);
+  pinMode(MODEInputPin, INPUT);
+  pinMode(throttleInputPin, INPUT);
+
   pinMode(elevatorServoPin, OUTPUT);
   pinMode(rotatorServoPin, OUTPUT);
   pinMode(rightElevonServoPin, OUTPUT);
   pinMode(leftElevonServoPin, OUTPUT);
+  pinMode(leftESCPin, OUTPUT);
+  pinMode(rightESCPin, OUTPUT);
 
   PWMTimerStartStabilizedPitch = 0;
   PWMTimerStartStabilizedRoll = 0;
   PWMTimerStartStabilizedYaw = 0;
   PWMTimerStartMODE = 0;
+  PWMTimerStartThrottle = 0;
   attachInterrupt(digitalPinToInterrupt(stabilizedPitchInputPin), PWMSignalCalculatorStabilizedPitch, CHANGE);
   attachInterrupt(digitalPinToInterrupt(stabilizedRollInputPin), PWMSignalCalculatorStabilizedRoll, CHANGE);
   attachInterrupt(digitalPinToInterrupt(stabilizedYawInputPin), PWMSignalCalculatorStabilizedYaw, CHANGE);
   attachInterrupt(digitalPinToInterrupt(MODEInputPin), PWMSignalCalculatorMODE, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(throttleInputPin), PWMSignalCalculatorThrottle, CHANGE);
 
   elevatorServo.attach(elevatorServoPin);
   rotatorServo.attach(rotatorServoPin);
   rightElevonServo.attach(rightElevonServoPin);
   leftElevonServo.attach(leftElevonServoPin);
+  rightESC.attach(rightESCPin);
+  leftESC.attach(leftESCPin);
 
   SDSetup();
   MPU6050Setup();
 }
 
+//========================================================================================================================//
+//                                                       MAIN LOOP                                                        //
+//========================================================================================================================//
 void loop()
 {
 
-  
   if (flyingWing)
   {
     justElevons();
@@ -457,7 +535,14 @@ void loop()
       elevonAsAileron();
     }
   }
-  
+  if (diffThrust)
+  {
+    ESCDifferentialThrust();
+  }
+  else
+  {
+    ESCDirectOutput();
+  }
   //write();
   //serialOutput();
   SDOutput();
