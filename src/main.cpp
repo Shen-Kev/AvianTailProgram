@@ -2,9 +2,23 @@
 //Author- Kevin Shen
 //Project Start- 11/1/2021
 
+//Instructions for use
+//Wipe SD card
+//Place MPU6050 upright (plane upside down)
+//Upload code to teensy
+//Unplug teensy and plug in SD card
+//plug in teensy and reboot it
+//ready to fly!
+//unplug teensy
+//unplug SD card
+//unplug SD card adapter
+//plug in SD card
+//plug in SD card adapter
+
 //Credits
 
 //Parts of code structure inspried by Nicholas Rehm
+//IMU Filter designed by Nicholas Rehm
 //Github: https://github.com/nickrehm/dRehmFlight
 
 /*
@@ -23,8 +37,7 @@
 
 //NEED TO DO
 //CHANGE SD CARD OUTPUT TO SOMETHING USEFUL
-//INVERT MPU6050 TO GET CORRECT ORIENTATIOON
-//CLEAN UP
+//CLEAN UP AND FURTHER TESTING
 
 #include <Arduino.h>
 #include <Servo.h>
@@ -90,7 +103,7 @@ int leftESCPin = SERVO6PIN;
 float stabilizedPitch;
 float stabilizedYaw;
 float stabilizedRoll;
-float MODE = 0;
+float MODE;
 float throttle;
 
 int stabilizedPitchInputPin = RX1;
@@ -109,6 +122,7 @@ float pitchDampener = 2;
 float elevonDampener = 2;
 float diffThrustDampener = 3;
 
+int iteration = 0;
 // ================================================================
 // ===               MPU6050 STUFF- NOT MY WORK                 ===
 // ================================================================
@@ -367,24 +381,24 @@ void write()
 }
 void serialOutput()
 {
-  Serial.print("  isOptimum: ");
-  Serial.print(isOptimum);
-  Serial.print(" issue tester: ");
-  Serial.print(abs(stabilizedYaw / 0.707) + 90);
-  Serial.print("  stabilizedYaw: ");
-  Serial.print(stabilizedYaw);
-  Serial.print("  stabilizedPitch: ");
-  Serial.print(stabilizedPitch);
-  Serial.print("  tailElevonOffset: ");
-  Serial.print(tailElevonOffset);
-  Serial.print("  elevator: ");
-  Serial.print(elevatorServoOutput);
-  Serial.print("  rotator: ");
-  Serial.print(rotatorServoOutput);
-  Serial.print("  right elevon: ");
-  Serial.print(rightElevonServoOutput);
-  Serial.print("  left elevon: ");
-  Serial.print(leftElevonServoOutput);
+  // Serial.print("  isOptimum: ");
+  // Serial.print(isOptimum);
+  // Serial.print(" issue tester: ");
+  // Serial.print(abs(stabilizedYaw / 0.707) + 90);
+  // Serial.print("  stabilizedYaw: ");
+  // Serial.print(stabilizedYaw);
+  // Serial.print("  stabilizedPitch: ");
+  // Serial.print(stabilizedPitch);
+  // Serial.print("  tailElevonOffset: ");
+  // Serial.print(tailElevonOffset);
+  // Serial.print("  elevator: ");
+  // Serial.print(elevatorServoOutput);
+  // Serial.print("  rotator: ");
+  // Serial.print(rotatorServoOutput);
+  // Serial.print("  right elevon: ");
+  // Serial.print(rightElevonServoOutput);
+  // Serial.print("  left elevon: ");
+  // Serial.print(leftElevonServoOutput);
 }
 
 void spreadCalc()
@@ -398,7 +412,7 @@ void tailAdjustForSpread()
 }
 
 void SDSetup()
-{ 
+{
 
   Serial.print("Initializing SD card...");
 
@@ -418,7 +432,7 @@ void SDSetup()
   if (myFile)
   {
     Serial.print("Writing to test.txt...");
-    myFile.println("testing 1, 2, 3.");
+    myFile.println("Key: iteration, yaw, pitch, roll, rcyaw, rcpitch, rcroll, rcthrottle, mode, isoptimum, elevator, rotator, Lelevon, Relevon");
     // close the file:
     myFile.close();
     Serial.println("done.");
@@ -440,25 +454,50 @@ void SDOutput()
     return;
 
   // read a packet from FIFO
-  if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer)) //THIS IF STATEMENT MAKES IT SLOOOOOW BUT IT IS MIPORTANT FOR IT TOWORK
-  {                                            // Get the Latest packet
+  if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer))
+  { // Get the Latest packet
     // display Euler angles in degrees
+
+    //this is what I want each line of output to be
+    //time attitude RCinputs stateVariables servoOutputs
+
     mpu.dmpGetQuaternion(&q, fifoBuffer);
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-    myFile.print("ypr\t");
+
+    myFile.print(iteration);
+    myFile.print("\t");
+
     myFile.print(ypr[0] * 180 / M_PI);
     myFile.print("\t");
     myFile.print(ypr[1] * 180 / M_PI);
     myFile.print("\t");
-    myFile.println(ypr[2] * 180 / M_PI);
+    myFile.print(ypr[2] * 180 / M_PI);
+    myFile.print("\t");
 
-    Serial.print("  ypr\t");
-    Serial.print(ypr[0] * 180 / M_PI);
-    Serial.print("\t");
-    Serial.print(ypr[1] * 180 / M_PI);
-    Serial.print("\t");
-    Serial.println(ypr[2] * 180 / M_PI);
+    myFile.print(stabilizedYaw);
+    myFile.print("\t");
+    myFile.print(stabilizedPitch);
+    myFile.print("\t");
+    myFile.print(stabilizedRoll);
+    myFile.print("\t");
+    myFile.print(throttle);
+    myFile.print("\t");
+    myFile.print(MODE);
+    myFile.print("\t");
+
+    myFile.print(isOptimum);
+    myFile.print("\t");
+
+    myFile.print(elevatorServoOutput);
+    myFile.print("\t");
+    myFile.print(rotatorServoOutput);
+    myFile.print("\t");
+    myFile.print(rightElevonServoOutput);
+    myFile.print("\t");
+    myFile.print(leftElevonServoOutput);
+    myFile.println("\t");
+
   }
   myFile.close();
 }
@@ -511,6 +550,7 @@ void setup()
 //========================================================================================================================//
 void loop()
 {
+  iteration++;
 
   if (flyingWing)
   {
@@ -545,5 +585,6 @@ void loop()
   }
   //write();
   //serialOutput();
+  Serial.println("loop");
   SDOutput();
 }
