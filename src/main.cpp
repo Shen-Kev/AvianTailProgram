@@ -36,8 +36,8 @@
 //https://www.arduino.cc/en/reference/SD
 
 //NEED TO DO
-//CHANGE SD CARD OUTPUT TO SOMETHING USEFUL
-//CLEAN UP AND FURTHER TESTING
+//REORIENT IMU
+//FIGURE OUT TIME (~2750 cycles a second, averaged over 10 minutes)
 
 #include <Arduino.h>
 #include <Servo.h>
@@ -122,7 +122,9 @@ float pitchDampener = 2;
 float elevonDampener = 2;
 float diffThrustDampener = 3;
 
-int iteration = 0;
+float iteration = 0;
+float timeInSeconds = 0;
+float frequency = 6500;
 // ================================================================
 // ===               MPU6050 STUFF- NOT MY WORK                 ===
 // ================================================================
@@ -433,7 +435,7 @@ void SDSetup()
   {
     Serial.print("Writing to test.txt...");
 
-    myFile.print("iteration");
+    myFile.print("time(s)");
     myFile.print("\t");
 
     myFile.print("yaw");
@@ -465,8 +467,7 @@ void SDSetup()
     myFile.print("\t");
     myFile.print("leftElevonServoOutput");
     myFile.println("\t");
-    
-    
+
     // close the file:
     myFile.close();
     Serial.println("done.");
@@ -491,47 +492,42 @@ void SDOutput()
   if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer))
   { // Get the Latest packet
     // display Euler angles in degrees
+      mpu.dmpGetQuaternion(&q, fifoBuffer);
+      mpu.dmpGetGravity(&gravity, &q);
+      mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
-    //this is what I want each line of output to be
-    //time attitude RCinputs stateVariables servoOutputs
+      myFile.print(timeInSeconds);
+      myFile.print("\t");
 
-    mpu.dmpGetQuaternion(&q, fifoBuffer);
-    mpu.dmpGetGravity(&gravity, &q);
-    mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+      myFile.print(ypr[0] * 180 / M_PI);
+      myFile.print("\t");
+      myFile.print(ypr[1] * 180 / M_PI);
+      myFile.print("\t");
+      myFile.print(ypr[2] * 180 / M_PI);
+      myFile.print("\t");
 
-    myFile.print(iteration);
-    myFile.print("\t");
+      myFile.print(RCyaw);
+      myFile.print("\t");
+      myFile.print(RCpitch);
+      myFile.print("\t");
+      myFile.print(RCroll);
+      myFile.print("\t");
+      myFile.print(throttle);
+      myFile.print("\t");
+      myFile.print(MODE);
+      myFile.print("\t");
 
-    myFile.print(ypr[0] * 180 / M_PI);
-    myFile.print("\t");
-    myFile.print(ypr[1] * 180 / M_PI);
-    myFile.print("\t");
-    myFile.print(ypr[2] * 180 / M_PI);
-    myFile.print("\t");
+      myFile.print(isOptimum);
+      myFile.print("\t");
 
-    myFile.print(RCyaw);
-    myFile.print("\t");
-    myFile.print(RCpitch);
-    myFile.print("\t");
-    myFile.print(RCroll);
-    myFile.print("\t");
-    myFile.print(throttle);
-    myFile.print("\t");
-    myFile.print(MODE);
-    myFile.print("\t");
-
-    myFile.print(isOptimum);
-    myFile.print("\t");
-
-    myFile.print(elevatorServoOutput);
-    myFile.print("\t");
-    myFile.print(rotatorServoOutput);
-    myFile.print("\t");
-    myFile.print(rightElevonServoOutput);
-    myFile.print("\t");
-    myFile.print(leftElevonServoOutput);
-    myFile.println("\t");
-
+      myFile.print(elevatorServoOutput);
+      myFile.print("\t");
+      myFile.print(rotatorServoOutput);
+      myFile.print("\t");
+      myFile.print(rightElevonServoOutput);
+      myFile.print("\t");
+      myFile.print(leftElevonServoOutput);
+      myFile.println("\t");
   }
   myFile.close();
 }
@@ -585,6 +581,7 @@ void setup()
 void loop()
 {
   iteration++;
+  timeInSeconds = iteration / frequency;
 
   if (flyingWing)
   {
@@ -619,6 +616,6 @@ void loop()
   }
   //write();
   //serialOutput();
-  Serial.println("loop");
+  Serial.print(timeInSeconds);
   SDOutput();
 }
