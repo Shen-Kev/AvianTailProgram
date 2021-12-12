@@ -432,7 +432,41 @@ void SDSetup()
   if (myFile)
   {
     Serial.print("Writing to test.txt...");
-    myFile.println("Key: iteration, yaw, pitch, roll, rcyaw, rcpitch, rcroll, rcthrottle, mode, isoptimum, elevator, rotator, Lelevon, Relevon");
+
+    myFile.print("iteration");
+    myFile.print("\t");
+
+    myFile.print("yaw");
+    myFile.print("\t");
+    myFile.print("pitch");
+    myFile.print("\t");
+    myFile.print("roll");
+    myFile.print("\t");
+
+    myFile.print("RCyaw");
+    myFile.print("\t");
+    myFile.print("RCpitch");
+    myFile.print("\t");
+    myFile.print("RCroll");
+    myFile.print("\t");
+    myFile.print('throttle');
+    myFile.print("\t");
+    myFile.print("MODE");
+    myFile.print("\t");
+
+    myFile.print("isOptimum");
+    myFile.print("\t");
+
+    myFile.print("elevatorServoOutput");
+    myFile.print("\t");
+    myFile.print("rotatorServoOutput");
+    myFile.print("\t");
+    myFile.print("rightElevonServoOutput");
+    myFile.print("\t");
+    myFile.print("leftElevonServoOutput");
+    myFile.println("\t");
+    
+    
     // close the file:
     myFile.close();
     Serial.println("done.");
