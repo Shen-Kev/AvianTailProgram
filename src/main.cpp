@@ -449,7 +449,7 @@ void SDSetup()
     myFile.print("\t");
     myFile.print("RCroll");
     myFile.print("\t");
-    myFile.print('throttle');
+    myFile.print("throttle");
     myFile.print("\t");
     myFile.print("MODE");
     myFile.print("\t");
