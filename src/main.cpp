@@ -100,15 +100,15 @@ int leftElevonServoPin = SERVO4PIN;
 int rightESCPin = SERVO5PIN;
 int leftESCPin = SERVO6PIN;
 
-float stabilizedPitch;
-float stabilizedYaw;
-float stabilizedRoll;
+float RCpitch;
+float RCyaw;
+float RCroll;
 float MODE;
 float throttle;
 
-int stabilizedPitchInputPin = RX1;
-int stabilizedYawInputPin = RX2;
-int stabilizedRollInputPin = RX3;
+int RCpitchInputPin = RX1;
+int RCyawInputPin = RX2;
+int RCrollInputPin = RX3;
 int MODEInputPin = RX4;
 int throttleInputPin = RX5;
 
@@ -223,14 +223,14 @@ void MPU6050Setup()
 //========================================================================================================================//
 
 //read pwm using interrupts
-volatile unsigned long PWMTimerStartStabilizedPitch;
-volatile int PWMLastInterruptTimeStabilizedPitch;
+volatile unsigned long PWMTimerStartPitch;
+volatile int PWMLastInterruptTimePitch;
 
-volatile unsigned long PWMTimerStartStabilizedYaw;
-volatile int PWMLastInterruptTimeStabilizedYaw;
+volatile unsigned long PWMTimerStartYaw;
+volatile int PWMLastInterruptTimeYaw;
 
-volatile unsigned long PWMTimerStartStabilizedRoll;
-volatile int PWMLastInterruptTimeStabilizedRoll;
+volatile unsigned long PWMTimerStartRoll;
+volatile int PWMLastInterruptTimeRoll;
 
 volatile unsigned long PWMTimerStartMODE;
 volatile int PWMLastInterruptTimeMODE;
@@ -263,17 +263,17 @@ void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterrupt
     }
   }
 }
-void PWMSignalCalculatorStabilizedPitch()
+void PWMSignalCalculatorPitch()
 {
-  PWMSignalCalculator(&stabilizedPitch, stabilizedPitchInputPin, &PWMLastInterruptTimeStabilizedPitch, &PWMTimerStartStabilizedPitch);
+  PWMSignalCalculator(&RCpitch, RCpitchInputPin, &PWMLastInterruptTimePitch, &PWMTimerStartPitch);
 }
-void PWMSignalCalculatorStabilizedYaw()
+void PWMSignalCalculatorYaw()
 {
-  PWMSignalCalculator(&stabilizedYaw, stabilizedYawInputPin, &PWMLastInterruptTimeStabilizedYaw, &PWMTimerStartStabilizedYaw);
+  PWMSignalCalculator(&RCyaw, RCyawInputPin, &PWMLastInterruptTimeYaw, &PWMTimerStartYaw);
 }
-void PWMSignalCalculatorStabilizedRoll()
+void PWMSignalCalculatorRoll()
 {
-  PWMSignalCalculator(&stabilizedRoll, stabilizedRollInputPin, &PWMLastInterruptTimeStabilizedRoll, &PWMTimerStartStabilizedRoll);
+  PWMSignalCalculator(&RCroll, RCrollInputPin, &PWMLastInterruptTimeRoll, &PWMTimerStartRoll);
 }
 void PWMSignalCalculatorMODE()
 {
@@ -291,8 +291,8 @@ float radian(float input)
 
 void ESCDifferentialThrust()
 {
-  leftESCOutput = throttle + (stabilizedYaw / diffThrustDampener);
-  rightESCOutput = throttle - (stabilizedYaw / diffThrustDampener);
+  leftESCOutput = throttle + (RCyaw / diffThrustDampener);
+  rightESCOutput = throttle - (RCyaw / diffThrustDampener);
 }
 
 void ESCDirectOutput()
@@ -303,13 +303,13 @@ void ESCDirectOutput()
 
 void tailMovement()
 {
-  if (stabilizedPitch == 0)
+  if (RCpitch == 0)
   {
-    stabilizedPitch++;
+    RCpitch++;
   }
-  optimumRotatorServoOutput = map(degrees(atan(stabilizedYaw / stabilizedPitch)), -90, 90, 0, 180);
+  optimumRotatorServoOutput = map(degrees(atan(RCyaw / RCpitch)), -90, 90, 0, 180);
   //deadzone- if yaw force is real small and pitch is close to 0 then set yaw to 0
-  if (stabilizedYaw > -deadZone && stabilizedYaw < deadZone && stabilizedPitch < deadZone && stabilizedPitch > -deadZone)
+  if (RCyaw > -deadZone && RCyaw < deadZone && RCpitch < deadZone && RCpitch > -deadZone)
   {
     optimumRotatorServoOutput = 90;
   }
@@ -326,16 +326,16 @@ void tailMovement()
 
   if (isOptimum)
   {
-    elevatorServoOutput = (stabilizedPitch / (cos(radian(rotatorServoOutput - 90)))) + 90;
+    elevatorServoOutput = (RCpitch / (cos(radian(rotatorServoOutput - 90)))) + 90;
     tailElevonOffset = 0;
   }
   else
   {
     //deflect servo to the point that we actually get correct yaw output (0.707 is the cos(45 deg))
-    elevatorServoOutput = -abs(stabilizedYaw / 0.707) + 90;
+    elevatorServoOutput = -abs(RCyaw / 0.707) + 90;
 
-    //figure out the extra pitch (pitch generated - pitch required (stabilzed pitch). pitch generated is tan(45 deg) times stabilized yaw force, tan (45 deg) is 1, so pitch generated = stabilizedYaw force generated.
-    tailElevonOffset = abs(stabilizedYaw) - abs(stabilizedPitch);
+    //figure out the extra pitch (pitch generated - pitch required (stabilzed pitch). pitch generated is tan(45 deg) times  yaw force, tan (45 deg) is 1, so pitch generated = RCyaw force generated.
+    tailElevonOffset = abs(RCyaw) - abs(RCpitch);
   }
   elevatorServoOutput = ((elevatorServoOutput - 90) / pitchDampener) + 90;
 
@@ -346,19 +346,19 @@ void tailMovement()
 
 void justPitch()
 {
-  elevatorServoOutput = (stabilizedPitch / pitchDampener) + 90;
+  elevatorServoOutput = (RCpitch / pitchDampener) + 90;
 }
 
 void justElevons()
 {
-  rightElevonServoOutput = ((stabilizedPitch + stabilizedRoll) / elevonDampener) + 90;
-  leftElevonServoOutput = (((0 - stabilizedPitch) + stabilizedRoll) / elevonDampener) + 90;
+  rightElevonServoOutput = ((RCpitch + RCroll) / elevonDampener) + 90;
+  leftElevonServoOutput = (((0 - RCpitch) + RCroll) / elevonDampener) + 90;
 }
 
 void elevonWithTail()
 {
-  rightElevonServoOutput = ((stabilizedRoll) / elevonDampener) - tailElevonOffset + 90;
-  leftElevonServoOutput = ((stabilizedRoll) / elevonDampener) + tailElevonOffset + 90;
+  rightElevonServoOutput = ((RCroll) / elevonDampener) - tailElevonOffset + 90;
+  leftElevonServoOutput = ((RCroll) / elevonDampener) + tailElevonOffset + 90;
 
   rightElevonServoOutput = constrain(rightElevonServoOutput + rightElevonServoOutputTrim, 0, 180);
   leftElevonServoOutput = constrain(leftElevonServoOutput + leftElevonServoOutputTrim, 0, 180);
@@ -366,8 +366,8 @@ void elevonWithTail()
 
 void elevonAsAileron()
 {
-  rightElevonServoOutput = (stabilizedRoll / elevonDampener) + 90;
-  leftElevonServoOutput = (stabilizedRoll / elevonDampener) + 90;
+  rightElevonServoOutput = (RCroll / elevonDampener) + 90;
+  leftElevonServoOutput = (RCroll / elevonDampener) + 90;
 }
 
 void write()
@@ -384,11 +384,11 @@ void serialOutput()
   // Serial.print("  isOptimum: ");
   // Serial.print(isOptimum);
   // Serial.print(" issue tester: ");
-  // Serial.print(abs(stabilizedYaw / 0.707) + 90);
-  // Serial.print("  stabilizedYaw: ");
-  // Serial.print(stabilizedYaw);
-  // Serial.print("  stabilizedPitch: ");
-  // Serial.print(stabilizedPitch);
+  // Serial.print(abs(RCyaw / 0.707) + 90);
+  // Serial.print("  RCyaw: ");
+  // Serial.print(RCyaw);
+  // Serial.print("  RCpitch: ");
+  // Serial.print(RCpitch);
   // Serial.print("  tailElevonOffset: ");
   // Serial.print(tailElevonOffset);
   // Serial.print("  elevator: ");
@@ -475,11 +475,11 @@ void SDOutput()
     myFile.print(ypr[2] * 180 / M_PI);
     myFile.print("\t");
 
-    myFile.print(stabilizedYaw);
+    myFile.print(RCyaw);
     myFile.print("\t");
-    myFile.print(stabilizedPitch);
+    myFile.print(RCpitch);
     myFile.print("\t");
-    myFile.print(stabilizedRoll);
+    myFile.print(RCroll);
     myFile.print("\t");
     myFile.print(throttle);
     myFile.print("\t");
@@ -510,9 +510,9 @@ void setup()
 {
   Serial.begin(115200);
 
-  pinMode(stabilizedPitchInputPin, INPUT);
-  pinMode(stabilizedYawInputPin, INPUT);
-  pinMode(stabilizedRollInputPin, INPUT);
+  pinMode(RCpitchInputPin, INPUT);
+  pinMode(RCyawInputPin, INPUT);
+  pinMode(RCrollInputPin, INPUT);
   pinMode(MODEInputPin, INPUT);
   pinMode(throttleInputPin, INPUT);
 
@@ -523,14 +523,14 @@ void setup()
   pinMode(leftESCPin, OUTPUT);
   pinMode(rightESCPin, OUTPUT);
 
-  PWMTimerStartStabilizedPitch = 0;
-  PWMTimerStartStabilizedRoll = 0;
-  PWMTimerStartStabilizedYaw = 0;
+  PWMTimerStartPitch = 0;
+  PWMTimerStartRoll = 0;
+  PWMTimerStartYaw = 0;
   PWMTimerStartMODE = 0;
   PWMTimerStartThrottle = 0;
-  attachInterrupt(digitalPinToInterrupt(stabilizedPitchInputPin), PWMSignalCalculatorStabilizedPitch, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(stabilizedRollInputPin), PWMSignalCalculatorStabilizedRoll, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(stabilizedYawInputPin), PWMSignalCalculatorStabilizedYaw, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(RCpitchInputPin), PWMSignalCalculatorPitch, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(RCrollInputPin), PWMSignalCalculatorRoll, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(RCyawInputPin), PWMSignalCalculatorYaw, CHANGE);
   attachInterrupt(digitalPinToInterrupt(MODEInputPin), PWMSignalCalculatorMODE, CHANGE);
   attachInterrupt(digitalPinToInterrupt(throttleInputPin), PWMSignalCalculatorThrottle, CHANGE);
 
