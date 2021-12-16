@@ -383,24 +383,38 @@ void write()
 }
 void serialOutput()
 {
-  // Serial.print("  isOptimum: ");
-  // Serial.print(isOptimum);
-  // Serial.print(" issue tester: ");
-  // Serial.print(abs(RCyaw / 0.707) + 90);
-  // Serial.print("  RCyaw: ");
-  // Serial.print(RCyaw);
-  // Serial.print("  RCpitch: ");
-  // Serial.print(RCpitch);
-  // Serial.print("  tailElevonOffset: ");
-  // Serial.print(tailElevonOffset);
-  // Serial.print("  elevator: ");
-  // Serial.print(elevatorServoOutput);
-  // Serial.print("  rotator: ");
-  // Serial.print(rotatorServoOutput);
-  // Serial.print("  right elevon: ");
-  // Serial.print(rightElevonServoOutput);
-  // Serial.print("  left elevon: ");
-  // Serial.print(leftElevonServoOutput);
+  Serial.print("time(s)");
+  Serial.print("\t");
+
+  Serial.print("yaw");
+  Serial.print("\t");
+  Serial.print("pitch");
+  Serial.print("\t");
+  Serial.print("roll");
+  Serial.print("\t");
+
+  Serial.print("RCyaw");
+  Serial.print("\t");
+  Serial.print("RCpitch");
+  Serial.print("\t");
+  Serial.print("RCroll");
+  Serial.print("\t");
+  Serial.print("throttle");
+  Serial.print("\t");
+  Serial.print("MODE");
+  Serial.print("\t");
+
+  Serial.print("isOptimum");
+  Serial.print("\t");
+
+  Serial.print("elevatorServoOutput");
+  Serial.print("\t");
+  Serial.print("rotatorServoOutput");
+  Serial.print("\t");
+  Serial.print("rightElevonServoOutput");
+  Serial.print("\t");
+  Serial.print("leftElevonServoOutput");
+  Serial.println("\t");
 }
 
 void spreadCalc()
@@ -615,7 +629,6 @@ void loop()
     ESCDirectOutput();
   }
   //write();
-  //serialOutput();
-  Serial.print(timeInSeconds);
+  serialOutput();
   SDOutput();
 }
