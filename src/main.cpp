@@ -630,5 +630,5 @@ void loop()
   }
   //write();
   serialOutput();
-  SDOutput();
+  //SDOutput();
 }
