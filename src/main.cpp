@@ -1,6 +1,6 @@
 //Teensy Flight Controller- Avian Tail Program- Science Fair Project
 //Author- Kevin Shen
-//Project Start- 11/1/2021
+//Project Start- 10/26/2021
 
 //Instructions for use
 //Wipe SD card
@@ -35,9 +35,6 @@
 //Used standard Arduino SD Library
 //https://www.arduino.cc/en/reference/SD
 
-//NEED TO DO
-//REORIENT IMU
-//FIGURE OUT TIME (~2750 cycles a second, averaged over 10 minutes)
 
 #include <Arduino.h>
 #include <Servo.h>
