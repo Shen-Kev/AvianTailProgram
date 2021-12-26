@@ -110,7 +110,7 @@ float optimumRotatorServoOutput;
 
 bool isOptimum = true;
 
-float pitchDampener = 2;
+float pitchDampener = 3;
 float elevonDampener = 2;
 float diffThrustDampener = 3;
 
