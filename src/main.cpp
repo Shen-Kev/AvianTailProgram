@@ -35,7 +35,6 @@
 //Used standard Arduino SD Library
 //https://www.arduino.cc/en/reference/SD
 
-
 #include <Arduino.h>
 #include <Servo.h>
 #include <SPI.h>
@@ -68,7 +67,6 @@ Servo rotatorServo;
 Servo rightElevonServo;
 Servo leftElevonServo;
 
-
 //CONFIGURATIONS
 const bool flyingWing = false;
 const bool fullBorb = false;
@@ -92,7 +90,6 @@ int rotatorServoPin = SERVO2PIN;
 int rightElevonServoPin = SERVO3PIN;
 int leftElevonServoPin = SERVO4PIN;
 
-
 float RCpitch;
 float RCyaw;
 float RCroll;
@@ -114,12 +111,12 @@ float elevonDampener = 2;
 float diffThrustDampener = 3;
 
 float iteration = 0;
-float timeInSeconds = 0;
-float frequency = 6500;
 
 float yaw = 0;
 float pitch = 0;
 float roll = 0;
+
+bool dataLog = false;
 
 // ================================================================
 // ===               MPU6050 STUFF- NOT MY WORK                 ===
@@ -233,7 +230,6 @@ volatile int PWMLastInterruptTimeRoll;
 volatile unsigned long PWMTimerStartMODE;
 volatile int PWMLastInterruptTimeMODE;
 
-
 void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterruptTime, volatile unsigned long *timerStart)
 {
   //record the interrupt time so that we can tell if the receiver has a signal from the transmitter
@@ -324,7 +320,6 @@ void tailMovement()
   rotatorServoOutput = 180 - rotatorServoOutput;
 }
 
-
 void justElevons()
 {
   rightElevonServoOutput = ((RCpitch + RCroll) / elevonDampener) + 90;
@@ -346,7 +341,6 @@ void write()
   rotatorServo.write(rotatorServoOutput + rotatorServoOutputTrim);
   rightElevonServo.write(rightElevonServoOutput + rightElevonServoOutputTrim);
   leftElevonServo.write(leftElevonServoOutput + leftElevonServoOutputTrim);
-
 }
 void serialOutput()
 {
@@ -376,7 +370,6 @@ void serialOutput()
   // Serial.print(rightElevonServoOutput);
   // Serial.print("  left elevon: ");
   // Serial.print(leftElevonServoOutput);
-
 }
 
 void spreadCalc()
@@ -411,7 +404,7 @@ void SDSetup()
   {
     Serial.print("Writing to test.txt...");
 
-    myFile.print("time(s)");
+    myFile.print("iteration");
     myFile.print("\t");
 
     myFile.print("yaw");
@@ -427,7 +420,7 @@ void SDSetup()
     myFile.print("\t");
     myFile.print("RCroll");
     myFile.print("\t");
-    myFile.print("MODE");
+    myFile.print("dataLog");
     myFile.print("\t");
 
     myFile.print("isOptimum");
@@ -452,12 +445,8 @@ void SDSetup()
     Serial.println("error opening test.txt");
   }
 }
-
-void SDOutput()
+void mpu6050Input()
 {
-
-  myFile = SD.open("test.txt", FILE_WRITE);
-
   // if programming failed, don't try to do anything
   if (!dmpReady)
     return;
@@ -466,61 +455,76 @@ void SDOutput()
   if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer))
   { // Get the Latest packet
     // display Euler angles in degrees
-      mpu.dmpGetQuaternion(&q, fifoBuffer);
-      mpu.dmpGetGravity(&gravity, &q);
-      mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+    mpu.dmpGetQuaternion(&q, fifoBuffer);
+    mpu.dmpGetGravity(&gravity, &q);
+    mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
-      myFile.print(timeInSeconds);
-      myFile.print("\t");
+    yaw = ypr[0] * 180 / M_PI;
+    pitch = ypr[2] * 180 / M_PI;
+    roll = ypr[1] * 180 / M_PI;
 
-      yaw = ypr[0] * 180 / M_PI;
-      pitch = ypr[2] * 180 / M_PI;
-      roll = ypr[1] * 180 / M_PI;
-
-      //INVERT
-      if(pitch < 0) {
-        pitch = 180+pitch;
-      }
-      else if(pitch >= 0) {
-        pitch = pitch-180;
-      }
-      if(roll < 0) {
-        roll= 180+roll;
-      }
-      else if(roll >= 0) {
-        roll = roll-180;
-      }
-      yaw = -yaw;
-
-      myFile.print(yaw);
-      myFile.print("\t");
-      myFile.print(pitch);
-      myFile.print("\t");
-      myFile.print(roll);
-      myFile.print("\t");
-
-      myFile.print(RCyaw);
-      myFile.print("\t");
-      myFile.print(RCpitch);
-      myFile.print("\t");
-      myFile.print(RCroll);
-      myFile.print("\t");
-      myFile.print(MODE);
-      myFile.print("\t");
-
-      myFile.print(isOptimum);
-      myFile.print("\t");
-
-      myFile.print(elevatorServoOutput);
-      myFile.print("\t");
-      myFile.print(rotatorServoOutput);
-      myFile.print("\t");
-      myFile.print(rightElevonServoOutput);
-      myFile.print("\t");
-      myFile.print(leftElevonServoOutput);
-      myFile.println("\t");
+    //INVERT
+    if (pitch < 0)
+    {
+      pitch = 180 + pitch;
+    }
+    else if (pitch >= 0)
+    {
+      pitch = pitch - 180;
+    }
+    if (roll < 0)
+    {
+      roll = 180 + roll;
+    }
+    else if (roll >= 0)
+    {
+      roll = roll - 180;
+    }
+    yaw = -yaw;
   }
+}
+void SDOutput()
+{
+
+  myFile = SD.open("test.txt", FILE_WRITE);
+
+  myFile.print(iteration);
+  myFile.print("\t");
+
+  myFile.print(yaw);
+  myFile.print("\t");
+  myFile.print(pitch);
+  myFile.print("\t");
+  myFile.print(roll);
+  myFile.print("\t");
+
+  myFile.print(RCyaw);
+  myFile.print("\t");
+  myFile.print(RCpitch);
+  myFile.print("\t");
+  myFile.print(RCroll);
+  myFile.print("\t");
+  myFile.print(dataLog);
+  myFile.print("\t");
+
+  myFile.print(isOptimum);
+  myFile.print("\t");
+
+  myFile.print(elevatorServoOutput);
+  myFile.print("\t");
+  myFile.print(rotatorServoOutput);
+  myFile.print("\t");
+  myFile.print(rightElevonServoOutput);
+  myFile.print("\t");
+  myFile.print(leftElevonServoOutput);
+  myFile.println("\t");
+
   myFile.close();
+}
+
+void timekeeper()
+{
+  iteration++;
 }
 
 //========================================================================================================================//
@@ -541,6 +545,7 @@ void setup()
   pinMode(rightElevonServoPin, OUTPUT);
   pinMode(leftElevonServoPin, OUTPUT);
 
+  pinMode(LED_BUILTIN, OUTPUT);
 
   PWMTimerStartPitch = 0;
   PWMTimerStartRoll = 0;
@@ -556,7 +561,6 @@ void setup()
   rightElevonServo.attach(rightElevonServoPin);
   leftElevonServo.attach(leftElevonServoPin);
 
-
   SDSetup();
   MPU6050Setup();
 }
@@ -566,9 +570,7 @@ void setup()
 //========================================================================================================================//
 void loop()
 {
-  iteration++;
-  timeInSeconds = iteration / frequency;
-
+  timekeeper();
   if (flyingWing)
   {
     justElevons();
@@ -586,10 +588,13 @@ void loop()
   }
   write();
   //serialOutput();
+  mpu6050Input();
   SDOutput();
 }
 
 //serial output slows stuff down
 //motor slows stuff down, throttle directly to motors using Y wire
-//changed IMU orientaiton 
-//changed mode swithc from different control to data logging
+//changed IMU orientaiton
+//changed mode swithc from different control to data logging, made LED flash when datalog
+//remvoed timer, too unreliable, clock speeds rise and falls, can use click sound of switch to overlay with data
+//changed tail direction
