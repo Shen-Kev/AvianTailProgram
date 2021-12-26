@@ -405,12 +405,12 @@ void SDSetup()
 
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
-  myFile = SD.open("test.txt", FILE_WRITE);
+  myFile = SD.open("flight_data.txt", FILE_WRITE);
 
   // if the file opened okay, write to it:
   if (myFile)
   {
-    Serial.print("Writing to test.txt...");
+    Serial.print("Writing to flight_data.txt...");
 
     myFile.print("iteration");
     myFile.print("\t");
@@ -612,6 +612,6 @@ void loop()
 //changed IMU orientaiton
 //changed mode swithc from different control to data logging, made LED flash when datalog
 //remvoed timer, too unreliable, clock speeds rise and falls, can use click sound of switch and data logging to overlay with data
-//changed tail direction
-//changed setup to not need COM port
-//changed SD 
+//changed tail direction NEED TO FIURE OUT HOW
+//changed setup to not need serial port NEED TO FIGURE OUT HOW
+//changed SD name  to flight_data
