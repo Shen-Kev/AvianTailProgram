@@ -560,8 +560,6 @@ void setup()
   pinMode(rightElevonServoPin, OUTPUT);
   pinMode(leftElevonServoPin, OUTPUT);
 
-  pinMode(LED_BUILTIN, OUTPUT);
-
   PWMTimerStartPitch = 0;
   PWMTimerStartRoll = 0;
   PWMTimerStartYaw = 0;
@@ -607,5 +605,5 @@ void loop()
   SDOutput();
 }
 
-//changed tail direction NEED TO FIURE OUT HOW
+//tail jerky and servos jerky whyyyy
 //changed setup to not need serial port NEED TO FIGURE OUT HOW
