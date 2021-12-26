@@ -67,8 +67,7 @@ Servo elevatorServo;
 Servo rotatorServo;
 Servo rightElevonServo;
 Servo leftElevonServo;
-Servo leftESC;
-Servo rightESC;
+
 
 //CONFIGURATIONS
 const bool flyingWing = false;
@@ -82,8 +81,7 @@ float elevatorServoOutput = 90;
 float rotatorServoOutput = 90;
 float rightElevonServoOutput = 90;
 float leftElevonServoOutput = 90;
-float rightESCOutput = 0;
-float leftESCOutput = 0;
+
 
 int elevatorServoOutputTrim = 0;
 int rotatorServoOutputTrim = 0;
@@ -94,20 +92,17 @@ int elevatorServoPin = SERVO1PIN;
 int rotatorServoPin = SERVO2PIN;
 int rightElevonServoPin = SERVO3PIN;
 int leftElevonServoPin = SERVO4PIN;
-int rightESCPin = SERVO5PIN;
-int leftESCPin = SERVO6PIN;
+
 
 float RCpitch;
 float RCyaw;
 float RCroll;
 float MODE;
-float throttle;
 
-int RCpitchInputPin = RX1;
+int RCpitchInputPin = RX3;
 int RCyawInputPin = RX2;
-int RCrollInputPin = RX3;
-int MODEInputPin = RX4;
-int throttleInputPin = RX5;
+int RCrollInputPin = RX4;
+int MODEInputPin = RX1;
 
 float tailElevonOffset = 0;
 
@@ -239,8 +234,6 @@ volatile int PWMLastInterruptTimeRoll;
 volatile unsigned long PWMTimerStartMODE;
 volatile int PWMLastInterruptTimeMODE;
 
-volatile unsigned long PWMTimerStartThrottle;
-volatile int PWMLastInterruptTimeThrottle;
 
 void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterruptTime, volatile unsigned long *timerStart)
 {
@@ -261,7 +254,7 @@ void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterrupt
     {
       //record the pulse time
 
-      *channel = map(((volatile int)micros() - *timerStart), 1000, 2000, -90, 90);
+      *channel = map(((volatile int)micros() - *timerStart), 1100, 1900, -90, 90);
       //restart the timer
       *timerStart = 0;
     }
@@ -283,26 +276,10 @@ void PWMSignalCalculatorMODE()
 {
   PWMSignalCalculator(&MODE, MODEInputPin, &PWMLastInterruptTimeMODE, &PWMTimerStartMODE);
 }
-void PWMSignalCalculatorThrottle()
-{
-  PWMSignalCalculator(&throttle, throttleInputPin, &PWMLastInterruptTimeThrottle, &PWMTimerStartThrottle);
-}
 
 float radian(float input)
 {
   return input * (3.1416 / 180);
-}
-
-void ESCDifferentialThrust()
-{
-  leftESCOutput = throttle + (RCyaw / diffThrustDampener);
-  rightESCOutput = throttle - (RCyaw / diffThrustDampener);
-}
-
-void ESCDirectOutput()
-{
-  leftESCOutput = throttle;
-  rightESCOutput = throttle;
 }
 
 void tailMovement()
@@ -380,35 +357,36 @@ void write()
   rotatorServo.write(rotatorServoOutput + rotatorServoOutputTrim);
   rightElevonServo.write(rightElevonServoOutput + rightElevonServoOutputTrim);
   leftElevonServo.write(leftElevonServoOutput + leftElevonServoOutputTrim);
-  rightESC.write(rightESCOutput);
-  leftESC.write(leftESCOutput);
+
 }
 void serialOutput()
 {
 
-  Serial.print(yaw);
-  Serial.print("\t");
-  Serial.print(pitch);
-  Serial.print("\t");
-  Serial.print(roll);
-  Serial.print("\t");
+  // Serial.print(yaw);
+  // Serial.print("\t");
+  // Serial.print(pitch);
+  // Serial.print("\t");
+  // Serial.print(roll);
+  // Serial.print("\t");
 
-  Serial.print("  isOptimum: ");
-  Serial.print(isOptimum);
+  // Serial.print("  isOptimum: ");
+  // Serial.print(isOptimum);
   Serial.print("  RCyaw: ");
   Serial.print(RCyaw);
   Serial.print("  RCpitch: ");
   Serial.print(RCpitch);
-  Serial.print("  tailElevonOffset: ");
-  Serial.print(tailElevonOffset);
-  Serial.print("  elevator: ");
-  Serial.print(elevatorServoOutput);
-  Serial.print("  rotator: ");
-  Serial.print(rotatorServoOutput);
-  Serial.print("  right elevon: ");
-  Serial.print(rightElevonServoOutput);
-  Serial.print("  left elevon: ");
-  Serial.print(leftElevonServoOutput);
+  Serial.print(" RCroll: ");
+  Serial.println(RCroll);
+  // Serial.print("  tailElevonOffset: ");
+  // Serial.print(tailElevonOffset);
+  // Serial.print("  elevator: ");
+  // Serial.print(elevatorServoOutput);
+  // Serial.print("  rotator: ");
+  // Serial.print(rotatorServoOutput);
+  // Serial.print("  right elevon: ");
+  // Serial.print(rightElevonServoOutput);
+  // Serial.print("  left elevon: ");
+  // Serial.print(leftElevonServoOutput);
 
 }
 
@@ -459,8 +437,6 @@ void SDSetup()
     myFile.print("RCpitch");
     myFile.print("\t");
     myFile.print("RCroll");
-    myFile.print("\t");
-    myFile.print("throttle");
     myFile.print("\t");
     myFile.print("MODE");
     myFile.print("\t");
@@ -540,8 +516,6 @@ void SDOutput()
       myFile.print("\t");
       myFile.print(RCroll);
       myFile.print("\t");
-      myFile.print(throttle);
-      myFile.print("\t");
       myFile.print(MODE);
       myFile.print("\t");
 
@@ -572,32 +546,27 @@ void setup()
   pinMode(RCyawInputPin, INPUT);
   pinMode(RCrollInputPin, INPUT);
   pinMode(MODEInputPin, INPUT);
-  pinMode(throttleInputPin, INPUT);
 
   pinMode(elevatorServoPin, OUTPUT);
   pinMode(rotatorServoPin, OUTPUT);
   pinMode(rightElevonServoPin, OUTPUT);
   pinMode(leftElevonServoPin, OUTPUT);
-  pinMode(leftESCPin, OUTPUT);
-  pinMode(rightESCPin, OUTPUT);
+
 
   PWMTimerStartPitch = 0;
   PWMTimerStartRoll = 0;
   PWMTimerStartYaw = 0;
   PWMTimerStartMODE = 0;
-  PWMTimerStartThrottle = 0;
   attachInterrupt(digitalPinToInterrupt(RCpitchInputPin), PWMSignalCalculatorPitch, CHANGE);
   attachInterrupt(digitalPinToInterrupt(RCrollInputPin), PWMSignalCalculatorRoll, CHANGE);
   attachInterrupt(digitalPinToInterrupt(RCyawInputPin), PWMSignalCalculatorYaw, CHANGE);
   attachInterrupt(digitalPinToInterrupt(MODEInputPin), PWMSignalCalculatorMODE, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(throttleInputPin), PWMSignalCalculatorThrottle, CHANGE);
 
   elevatorServo.attach(elevatorServoPin);
   rotatorServo.attach(rotatorServoPin);
   rightElevonServo.attach(rightElevonServoPin);
   leftElevonServo.attach(leftElevonServoPin);
-  rightESC.attach(rightESCPin);
-  leftESC.attach(leftESCPin);
+
 
   SDSetup();
   MPU6050Setup();
@@ -634,15 +603,7 @@ void loop()
       elevonAsAileron();
     }
   }
-  if (diffThrust)
-  {
-    ESCDifferentialThrust();
-  }
-  else
-  {
-    ESCDirectOutput();
-  }
-  //write();
-  //serialOutput();
+  write();
+  serialOutput();
   SDOutput();
 }
