@@ -43,7 +43,7 @@
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "I2Cdev.h"
 
-File myFile;
+File file;
 MPU6050 mpu;
 
 //PINS
@@ -112,7 +112,7 @@ float diffThrustDampener = 3;
 
 int iteration = 0;
 int SDiteration = 0;
-int SDdataLogFrequency = 500;
+int SDdataLogFrequency = 200;
 
 float yaw = 0;
 float pitch = 0;
@@ -272,10 +272,12 @@ void PWMSignalCalculatorRoll()
 void PWMSignalCalculatorMODE()
 {
   PWMSignalCalculator(&MODE, MODEInputPin, &PWMLastInterruptTimeMODE, &PWMTimerStartMODE);
-  if (MODE >= 0) {
+  if (MODE >= 0)
+  {
     dataLog = true;
   }
-  else {
+  else
+  {
     dataLog = false;
   }
 }
@@ -405,46 +407,46 @@ void SDSetup()
 
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
-  myFile = SD.open("flight_data.txt", FILE_WRITE);
+  file = SD.open("flight_data.txt", FILE_WRITE);
 
   // if the file opened okay, write to it:
-  if (myFile)
+  if (file)
   {
     Serial.print("Writing to flight_data.txt...");
 
-    myFile.print("iteration");
-    myFile.print("\t");
+    file.print("iteration");
+    file.print("\t");
 
-    myFile.print("yaw");
-    myFile.print("\t");
-    myFile.print("pitch");
-    myFile.print("\t");
-    myFile.print("roll");
-    myFile.print("\t");
+    file.print("yaw");
+    file.print("\t");
+    file.print("pitch");
+    file.print("\t");
+    file.print("roll");
+    file.print("\t");
 
-    myFile.print("RCyaw");
-    myFile.print("\t");
-    myFile.print("RCpitch");
-    myFile.print("\t");
-    myFile.print("RCroll");
-    myFile.print("\t");
-    myFile.print("dataLog");
-    myFile.print("\t");
+    file.print("RCyaw");
+    file.print("\t");
+    file.print("RCpitch");
+    file.print("\t");
+    file.print("RCroll");
+    file.print("\t");
+    file.print("dataLog");
+    file.print("\t");
 
-    myFile.print("isOptimum");
-    myFile.print("\t");
+    file.print("isOptimum");
+    file.print("\t");
 
-    myFile.print("elevatorServoOutput");
-    myFile.print("\t");
-    myFile.print("rotatorServoOutput");
-    myFile.print("\t");
-    myFile.print("rightElevonServoOutput");
-    myFile.print("\t");
-    myFile.print("leftElevonServoOutput");
-    myFile.println("\t");
+    file.print("elevatorServoOutput");
+    file.print("\t");
+    file.print("rotatorServoOutput");
+    file.print("\t");
+    file.print("rightElevonServoOutput");
+    file.print("\t");
+    file.print("leftElevonServoOutput");
+    file.println("\t");
 
     // close the file:
-    myFile.close();
+    file.close();
     Serial.println("done.");
   }
   else
@@ -493,45 +495,44 @@ void mpu6050Input()
 }
 void SDOutput()
 {
-  if (SDiteration >= SDdataLogFrequency) {
-    digitalWrite(LED_BUILTIN, HIGH);
-    myFile = SD.open("test.txt", FILE_WRITE);
+  if (SDiteration >= SDdataLogFrequency)
+  {
+    file = SD.open("flight_data.txt", FILE_WRITE);
 
-    myFile.print(iteration);
-    myFile.print("\t");
+    file.print(iteration);
+    file.print("\t");
 
-    myFile.print(yaw);
-    myFile.print("\t");
-    myFile.print(pitch);
-    myFile.print("\t");
-    myFile.print(roll);
-    myFile.print("\t");
+    file.print(yaw);
+    file.print("\t");
+    file.print(pitch);
+    file.print("\t");
+    file.print(roll);
+    file.print("\t");
 
-    myFile.print(RCyaw);
-    myFile.print("\t");
-    myFile.print(RCpitch);
-    myFile.print("\t");
-    myFile.print(RCroll);
-    myFile.print("\t");
-    myFile.print(dataLog);
-    myFile.print("\t");
+    file.print(RCyaw);
+    file.print("\t");
+    file.print(RCpitch);
+    file.print("\t");
+    file.print(RCroll);
+    file.print("\t");
+    file.print(dataLog);
+    file.print("\t");
 
-    myFile.print(isOptimum);
-    myFile.print("\t");
+    file.print(isOptimum);
+    file.print("\t");
 
-    myFile.print(elevatorServoOutput);
-    myFile.print("\t");
-    myFile.print(rotatorServoOutput);
-    myFile.print("\t");
-    myFile.print(rightElevonServoOutput);
-    myFile.print("\t");
-    myFile.print(leftElevonServoOutput);
-    myFile.println("\t");
+    file.print(elevatorServoOutput);
+    file.print("\t");
+    file.print(rotatorServoOutput);
+    file.print("\t");
+    file.print(rightElevonServoOutput);
+    file.print("\t");
+    file.print(leftElevonServoOutput);
+    file.println("\t");
 
-    myFile.close();
+    file.close();
 
     SDiteration = 0;
-    digitalWrite(LED_BUILTIN, LOW);
   }
 }
 
@@ -612,6 +613,7 @@ void loop()
 //changed IMU orientaiton
 //changed mode swithc from different control to data logging, made LED flash when datalog
 //remvoed timer, too unreliable, clock speeds rise and falls, can use click sound of switch and data logging to overlay with data
+//changed SD name to flight_data
+
 //changed tail direction NEED TO FIURE OUT HOW
 //changed setup to not need serial port NEED TO FIGURE OUT HOW
-//changed SD name  to flight_data
