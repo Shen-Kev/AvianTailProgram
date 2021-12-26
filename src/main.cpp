@@ -110,7 +110,9 @@ float pitchDampener = 3;
 float elevonDampener = 2;
 float diffThrustDampener = 3;
 
-float iteration = 0;
+int iteration = 0;
+int SDiteration = 0;
+int SDdataLogFrequency = 500;
 
 float yaw = 0;
 float pitch = 0;
@@ -270,6 +272,12 @@ void PWMSignalCalculatorRoll()
 void PWMSignalCalculatorMODE()
 {
   PWMSignalCalculator(&MODE, MODEInputPin, &PWMLastInterruptTimeMODE, &PWMTimerStartMODE);
+  if (MODE >= 0) {
+    dataLog = true;
+  }
+  else {
+    dataLog = false;
+  }
 }
 
 float radian(float input)
@@ -485,46 +493,52 @@ void mpu6050Input()
 }
 void SDOutput()
 {
+  if (SDiteration >= SDdataLogFrequency) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    myFile = SD.open("test.txt", FILE_WRITE);
 
-  myFile = SD.open("test.txt", FILE_WRITE);
+    myFile.print(iteration);
+    myFile.print("\t");
 
-  myFile.print(iteration);
-  myFile.print("\t");
+    myFile.print(yaw);
+    myFile.print("\t");
+    myFile.print(pitch);
+    myFile.print("\t");
+    myFile.print(roll);
+    myFile.print("\t");
 
-  myFile.print(yaw);
-  myFile.print("\t");
-  myFile.print(pitch);
-  myFile.print("\t");
-  myFile.print(roll);
-  myFile.print("\t");
+    myFile.print(RCyaw);
+    myFile.print("\t");
+    myFile.print(RCpitch);
+    myFile.print("\t");
+    myFile.print(RCroll);
+    myFile.print("\t");
+    myFile.print(dataLog);
+    myFile.print("\t");
 
-  myFile.print(RCyaw);
-  myFile.print("\t");
-  myFile.print(RCpitch);
-  myFile.print("\t");
-  myFile.print(RCroll);
-  myFile.print("\t");
-  myFile.print(dataLog);
-  myFile.print("\t");
+    myFile.print(isOptimum);
+    myFile.print("\t");
 
-  myFile.print(isOptimum);
-  myFile.print("\t");
+    myFile.print(elevatorServoOutput);
+    myFile.print("\t");
+    myFile.print(rotatorServoOutput);
+    myFile.print("\t");
+    myFile.print(rightElevonServoOutput);
+    myFile.print("\t");
+    myFile.print(leftElevonServoOutput);
+    myFile.println("\t");
 
-  myFile.print(elevatorServoOutput);
-  myFile.print("\t");
-  myFile.print(rotatorServoOutput);
-  myFile.print("\t");
-  myFile.print(rightElevonServoOutput);
-  myFile.print("\t");
-  myFile.print(leftElevonServoOutput);
-  myFile.println("\t");
+    myFile.close();
 
-  myFile.close();
+    SDiteration = 0;
+    digitalWrite(LED_BUILTIN, LOW);
+  }
 }
 
 void timekeeper()
 {
   iteration++;
+  SDiteration++;
 }
 
 //========================================================================================================================//
@@ -590,11 +604,14 @@ void loop()
   //serialOutput();
   mpu6050Input();
   SDOutput();
+  
 }
 
 //serial output slows stuff down
 //motor slows stuff down, throttle directly to motors using Y wire
 //changed IMU orientaiton
 //changed mode swithc from different control to data logging, made LED flash when datalog
-//remvoed timer, too unreliable, clock speeds rise and falls, can use click sound of switch to overlay with data
+//remvoed timer, too unreliable, clock speeds rise and falls, can use click sound of switch and data logging to overlay with data
 //changed tail direction
+//changed setup to not need COM port
+//changed SD 
