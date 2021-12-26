@@ -122,6 +122,11 @@ float diffThrustDampener = 3;
 float iteration = 0;
 float timeInSeconds = 0;
 float frequency = 6500;
+
+float yaw = 0;
+float pitch = 0;
+float roll = 0;
+
 // ================================================================
 // ===               MPU6050 STUFF- NOT MY WORK                 ===
 // ================================================================
@@ -380,6 +385,14 @@ void write()
 }
 void serialOutput()
 {
+
+  Serial.print(yaw);
+  Serial.print("\t");
+  Serial.print(pitch);
+  Serial.print("\t");
+  Serial.print(roll);
+  Serial.print("\t");
+
   Serial.print("  isOptimum: ");
   Serial.print(isOptimum);
   Serial.print("  RCyaw: ");
@@ -495,9 +508,9 @@ void SDOutput()
       myFile.print(timeInSeconds);
       myFile.print("\t");
 
-      float yaw = ypr[0] * 180 / M_PI;
-      float pitch = ypr[2] * 180 / M_PI;
-      float roll = ypr[1] * 180 / M_PI;
+      yaw = ypr[0] * 180 / M_PI;
+      pitch = ypr[2] * 180 / M_PI;
+      roll = ypr[1] * 180 / M_PI;
 
       //INVERT
       if(pitch < 0) {
@@ -520,13 +533,6 @@ void SDOutput()
       myFile.print("\t");
       myFile.print(roll);
       myFile.print("\t");
-
-      Serial.print(yaw);
-      Serial.print("\t");
-      Serial.print(pitch);
-      Serial.print("\t");
-      Serial.print(roll);
-      Serial.println("\t");
 
       myFile.print(RCyaw);
       myFile.print("\t");
