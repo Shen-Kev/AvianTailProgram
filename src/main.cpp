@@ -4,7 +4,7 @@
 
 //Instructions for use
 //Wipe SD card
-//Place MPU6050 upright (plane upside down, to calibrate. when plane is level, pitch and roll are 0, when rolling right roll is positive, when pitch is positive, when yaw right yaw is positive)
+//Place MPU6050 upright (plane upside down, to calibrate. when plane is level, pitch and roll are 0, when rolling right roll is positive, pitch up when pitch is positive, when yaw right yaw is positive)
 //Upload code to teensy
 //Unplug teensy and plug in SD card
 //plug in teensy and reboot it
@@ -251,7 +251,7 @@ void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterrupt
     {
       //record the pulse time
 
-      *channel = map(((volatile int)micros() - *timerStart), 1100, 1900, -90, 90);
+      *channel = map(((volatile int)micros() - *timerStart), 1100, 1900, 90, -90);
       //restart the timer
       *timerStart = 0;
     }
@@ -272,7 +272,7 @@ void PWMSignalCalculatorRoll()
 void PWMSignalCalculatorMODE()
 {
   PWMSignalCalculator(&MODE, MODEInputPin, &PWMLastInterruptTimeMODE, &PWMTimerStartMODE);
-  if (MODE >= 0)
+  if (MODE < 0)
   {
     dataLog = true;
   }
@@ -291,9 +291,9 @@ void tailMovement()
 {
   if (RCpitch == 0)
   {
-    RCpitch++;
+    RCpitch++; //no divide by 0 
   }
-  optimumRotatorServoOutput = map(degrees(atan(RCyaw / RCpitch)), -90, 90, 0, 180);
+  optimumRotatorServoOutput = map(degrees(atan(RCyaw / RCpitch)), 90, -90, 180, 0);
   //deadzone- if yaw force is real small and pitch is close to 0 then set yaw to 0
   if (RCyaw > -deadZone && RCyaw < deadZone && RCpitch < deadZone && RCpitch > -deadZone)
   {
@@ -312,22 +312,22 @@ void tailMovement()
 
   if (isOptimum)
   {
-    elevatorServoOutput = (RCpitch / (cos(radian(rotatorServoOutput - 90)))) + 90;
+    elevatorServoOutput = 90-(RCpitch / (cos(radian(rotatorServoOutput - 90))));
     tailElevonOffset = 0;
   }
   else
   {
     //deflect servo to the point that we actually get correct yaw output (0.707 is the cos(45 deg))
-    elevatorServoOutput = -abs(RCyaw / 0.707) + 90;
+    elevatorServoOutput = abs(RCyaw / 0.707) + 90;
 
     //figure out the extra pitch (pitch generated - pitch required (stabilzed pitch). pitch generated is tan(45 deg) times  yaw force, tan (45 deg) is 1, so pitch generated = RCyaw force generated.
-    tailElevonOffset = abs(RCyaw) - abs(RCpitch);
+    tailElevonOffset = abs(RCpitch) - abs(RCyaw);
   }
   elevatorServoOutput = ((elevatorServoOutput - 90) / pitchDampener) + 90;
 
   elevatorServoOutput = constrain(elevatorServoOutput + elevatorServoOutputTrim, 0, 180);
   rotatorServoOutput = constrain(rotatorServoOutput + rotatorServoOutputTrim, 0, 180);
-  rotatorServoOutput = 180 - rotatorServoOutput;
+  //rotatorServoOutput = 180 - rotatorServoOutput;
 }
 
 void justElevons()
@@ -490,7 +490,7 @@ void mpu6050Input()
     {
       roll = roll - 180;
     }
-    yaw = -yaw;
+    yaw = 0 - yaw;
   }
 }
 void SDOutput()
@@ -602,18 +602,10 @@ void loop()
     elevonWithTail();
   }
   write();
-  //serialOutput();
+//  serialOutput();
   mpu6050Input();
   SDOutput();
-  
 }
-
-//serial output slows stuff down
-//motor slows stuff down, throttle directly to motors using Y wire
-//changed IMU orientaiton
-//changed mode swithc from different control to data logging, made LED flash when datalog
-//remvoed timer, too unreliable, clock speeds rise and falls, can use click sound of switch and data logging to overlay with data
-//changed SD name to flight_data
 
 //changed tail direction NEED TO FIURE OUT HOW
 //changed setup to not need serial port NEED TO FIGURE OUT HOW
