@@ -82,7 +82,6 @@ float rotatorServoOutput = 90;
 float rightElevonServoOutput = 90;
 float leftElevonServoOutput = 90;
 
-
 int elevatorServoOutputTrim = 0;
 int rotatorServoOutputTrim = 0;
 int rightElevonServoOutputTrim = 0;
@@ -325,10 +324,6 @@ void tailMovement()
   rotatorServoOutput = 180 - rotatorServoOutput;
 }
 
-void justPitch()
-{
-  elevatorServoOutput = (RCpitch / pitchDampener) + 90;
-}
 
 void justElevons()
 {
@@ -343,12 +338,6 @@ void elevonWithTail()
 
   rightElevonServoOutput = constrain(rightElevonServoOutput + rightElevonServoOutputTrim, 0, 180);
   leftElevonServoOutput = constrain(leftElevonServoOutput + leftElevonServoOutputTrim, 0, 180);
-}
-
-void elevonAsAileron()
-{
-  rightElevonServoOutput = (RCroll / elevonDampener) + 90;
-  leftElevonServoOutput = (RCroll / elevonDampener) + 90;
 }
 
 void write()
@@ -592,18 +581,15 @@ void loop()
   }
   else if (noSpread)
   {
-    if (MODE < 0) //these two can be switched mid flight and are the same configuration
-    {
-      tailMovement();
-      elevonWithTail();
-    }
-    else if (MODE >= 0)
-    {
-      justPitch();
-      elevonAsAileron();
-    }
+    tailMovement();
+    elevonWithTail();
   }
   write();
-  serialOutput();
+  //serialOutput();
   SDOutput();
 }
+
+//serial output slows stuff down
+//motor slows stuff down, throttle directly to motors using Y wire
+//changed IMU orientaiton 
+//changed mode swithc from different control to data logging
