@@ -4,7 +4,7 @@
 
 //Instructions for use
 //Wipe SD card
-//Place MPU6050 upright (plane upside down)
+//Place MPU6050 upright (plane upside down, to calibrate. when plane is level, pitch and roll are 0, when rolling right roll is positive, when pitch is positive, when yaw right yaw is positive)
 //Upload code to teensy
 //Unplug teensy and plug in SD card
 //plug in teensy and reboot it
@@ -495,12 +495,38 @@ void SDOutput()
       myFile.print(timeInSeconds);
       myFile.print("\t");
 
-      myFile.print(ypr[0] * 180 / M_PI);
+      float yaw = ypr[0] * 180 / M_PI;
+      float pitch = ypr[2] * 180 / M_PI;
+      float roll = ypr[1] * 180 / M_PI;
+
+      //INVERT
+      if(pitch < 0) {
+        pitch = 180+pitch;
+      }
+      else if(pitch >= 0) {
+        pitch = pitch-180;
+      }
+      if(roll < 0) {
+        roll= 180+roll;
+      }
+      else if(roll >= 0) {
+        roll = roll-180;
+      }
+      yaw = -yaw;
+
+      myFile.print(yaw);
       myFile.print("\t");
-      myFile.print(ypr[1] * 180 / M_PI);
+      myFile.print(pitch);
       myFile.print("\t");
-      myFile.print(ypr[2] * 180 / M_PI);
+      myFile.print(roll);
       myFile.print("\t");
+
+      Serial.print(yaw);
+      Serial.print("\t");
+      Serial.print(pitch);
+      Serial.print("\t");
+      Serial.print(roll);
+      Serial.println("\t");
 
       myFile.print(RCyaw);
       myFile.print("\t");
@@ -611,6 +637,6 @@ void loop()
     ESCDirectOutput();
   }
   //write();
-  serialOutput();
+  //serialOutput();
   SDOutput();
 }
