@@ -108,7 +108,7 @@ bool isOptimum = true;
 
 float pitchDampener = 3;
 float elevonDampener = 2;
-float diffThrustDampener = 3;
+float tailElevonOffsetDampener = 2;
 
 int iteration = 0;
 int SDiteration = 0;
@@ -312,22 +312,23 @@ void tailMovement()
 
   if (isOptimum)
   {
-    elevatorServoOutput = 90-(RCpitch / (cos(radian(rotatorServoOutput - 90))));
+    elevatorServoOutput = 90+(RCpitch / (cos(radian(rotatorServoOutput - 90))));
+    rotatorServoOutput = 180 - rotatorServoOutput;
     tailElevonOffset = 0;
   }
   else
   {
     //deflect servo to the point that we actually get correct yaw output (0.707 is the cos(45 deg))
-    elevatorServoOutput = abs(RCyaw / 0.707) + 90;
+    elevatorServoOutput = 90- abs(RCyaw / 0.707);
 
     //figure out the extra pitch (pitch generated - pitch required (stabilzed pitch). pitch generated is tan(45 deg) times  yaw force, tan (45 deg) is 1, so pitch generated = RCyaw force generated.
-    tailElevonOffset = abs(RCpitch) - abs(RCyaw);
+    tailElevonOffset = (abs(RCpitch) - abs(RCyaw))/tailElevonOffsetDampener;
   }
   elevatorServoOutput = ((elevatorServoOutput - 90) / pitchDampener) + 90;
 
   elevatorServoOutput = constrain(elevatorServoOutput + elevatorServoOutputTrim, 0, 180);
   rotatorServoOutput = constrain(rotatorServoOutput + rotatorServoOutputTrim, 0, 180);
-  //rotatorServoOutput = 180 - rotatorServoOutput;
+
 }
 
 void justElevons()
