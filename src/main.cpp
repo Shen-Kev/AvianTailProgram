@@ -518,7 +518,7 @@ void mpu6050Input()
     }
     yaw = 0 - yaw;
     yawChange = (yaw-lastYaw)*yawChangeMultiplier;
-    if(yawChange >= 300 * yawChangeMultiplier) { //when yaw reaches 180 and goes to -180,
+    if(yawChange >= 300 * yawChangeMultiplier || yawChange <= 300 * yawChangeMultiplier) { //when yaw reaches 180 and goes to -180,
       yawChange = 0;
     }
   }
