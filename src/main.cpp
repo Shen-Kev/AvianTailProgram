@@ -135,7 +135,6 @@ float yawChangeMultiplier = 10;
 float pitch = 0;
 float roll = 0;
 
-
 // MPU6050 CODE- UNORIGINAL CODE ================================================================
 
 // MPU control/status vars
@@ -492,7 +491,7 @@ void mpu6050Input()
     mpu.dmpGetQuaternion(&q, fifoBuffer);
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-    
+
     lastYaw = yaw;
 
     yaw = ypr[0] * 180 / M_PI;
@@ -515,10 +514,12 @@ void mpu6050Input()
     else if (roll >= 0)
     {
       roll = roll - 180;
+      s
     }
     yaw = 0 - yaw;
-    yawChange = (yaw-lastYaw)*yawChangeMultiplier;
-    if(yawChange >= 300 * yawChangeMultiplier || yawChange <= 300 * yawChangeMultiplier) { //when yaw reaches 180 and goes to -180,
+    yawChange = (yaw - lastYaw) * yawChangeMultiplier;
+    if (yawChange >= 300 * yawChangeMultiplier || yawChange <= 300 * yawChangeMultiplier)
+    { //when yaw reaches 180 and goes to -180,
       yawChange = 0;
     }
   }
@@ -549,10 +550,10 @@ void SDOutput()
     file.print("\t");
     file.print(RCroll);
     file.print("\t");
-    file.print(dataLog*100); //datalog and isOptimum multiplied by 100 to make it easier to see on graph
+    file.print(dataLog * 100); //datalog and isOptimum multiplied by 100 to make it easier to see on graph
     file.print("\t");
 
-    file.print(isOptimum*100);
+    file.print(isOptimum * 100);
     file.print("\t");
 
     file.print(elevatorServoOutput);
