@@ -8,7 +8,7 @@
 //2: Place MPU6050 upright (plane upside down, to calibrate. when plane is level, pitch and roll are 0, when rolling right roll is positive,
 //pitch up when pitch is positive, when yaw right yaw is positive)
 //3: plug in SD card
-//4: turn on Teensy
+//4: turn on & reset Teensy
 //5: fly
 //6: power off teensy
 //7: unplug SD card from MAV
@@ -130,7 +130,8 @@ bool dataLog = false;
 //initialize attitude variables
 float yaw = 0;
 float lastYaw = 0;
-float yawChange = 0;
+float yawChange = 0; //yaw change is simply a visual, not an exact measurement- absolute yaw is, however
+float yawChangeMultiplier = 10;
 float pitch = 0;
 float roll = 0;
 
@@ -438,7 +439,7 @@ void SDSetup()
 
     file.print("yaw");
     file.print("\t");
-    file.print(yawChange);
+    file.print("yawChange");
     file.print("\t");
     file.print("pitch");
     file.print("\t");
@@ -516,8 +517,10 @@ void mpu6050Input()
       roll = roll - 180;
     }
     yaw = 0 - yaw;
-    yawChange = yaw-lastYaw;
-
+    yawChange = (yaw-lastYaw)*yawChangeMultiplier;
+    if(yawChange >= 300 * yawChangeMultiplier) { //when yaw reaches 180 and goes to -180,
+      yawChange = 0;
+    }
   }
 }
 
