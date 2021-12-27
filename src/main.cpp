@@ -549,10 +549,10 @@ void SDOutput()
     file.print("\t");
     file.print(RCroll);
     file.print("\t");
-    file.print(dataLog);
+    file.print(dataLog*100); //datalog and isOptimum multiplied by 100 to make it easier to see on graph
     file.print("\t");
 
-    file.print(isOptimum);
+    file.print(isOptimum*100);
     file.print("\t");
 
     file.print(elevatorServoOutput);
