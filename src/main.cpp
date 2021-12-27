@@ -3,17 +3,16 @@
 //Project Start- 10/26/2021
 
 //Instructions for use
-//Wipe SD card
-//Place MPU6050 upright (plane upside down, to calibrate. when plane is level, pitch and roll are 0, when rolling right roll is positive, pitch up when pitch is positive, when yaw right yaw is positive)
-//Upload code to teensy
-//Unplug teensy and plug in SD card
-//plug in teensy and reboot it
-//ready to fly!
-//unplug teensy
-//unplug SD card
-//unplug SD card adapter
-//plug in SD card
-//plug in SD card adapter
+
+//1: Wipe SD card
+//2: Place MPU6050 upright (plane upside down, to calibrate. when plane is level, pitch and roll are 0, when rolling right roll is positive, 
+//pitch up when pitch is positive, when yaw right yaw is positive)
+//3: plug in SD card
+//4: turn on Teensy 
+//5: fly
+//6: power off teensy
+//7: unplug SD card from MAV
+//8: plug in SD card to computer
 
 //Credits
 
@@ -35,6 +34,10 @@
 //Used standard Arduino SD Library
 //https://www.arduino.cc/en/reference/SD
 
+//PWM signal code structure inspired by 
+//https://www.camelsoftware.com/2015/12/25/reading-pwm-signals-from-an-rc-receiver-with-arduino/
+
+//libraries
 #include <Arduino.h>
 #include <Servo.h>
 #include <SPI.h>
@@ -43,10 +46,11 @@
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "I2Cdev.h"
 
+//SD and MPU classes
 File file;
 MPU6050 mpu;
 
-//PINS
+//pin definition
 #define INTERRUPT_PIN 9
 #define RX1 2
 #define RX2 3
@@ -62,67 +66,74 @@ MPU6050 mpu;
 #define SERVO5PIN 15
 #define SERVO6PIN 14
 
+//servo class
 Servo elevatorServo;
 Servo rotatorServo;
 Servo rightElevonServo;
 Servo leftElevonServo;
 
-//CONFIGURATIONS
+//configurations
 const bool flyingWing = false;
 const bool fullBorb = false;
 const bool noSpread = true;
 const bool diffThrust = false;
 
+//deadzone parameter
 const float deadZone = 10;
 
+//initalize servo outputs
 float elevatorServoOutput = 90;
 float rotatorServoOutput = 90;
 float rightElevonServoOutput = 90;
 float leftElevonServoOutput = 90;
 
+//servo trim
 int elevatorServoOutputTrim = 0;
 int rotatorServoOutputTrim = 0;
 int rightElevonServoOutputTrim = 0;
 int leftElevonServoOutputTrim = 0;
 
+//define servo pins
 int elevatorServoPin = SERVO1PIN;
 int rotatorServoPin = SERVO2PIN;
 int rightElevonServoPin = SERVO3PIN;
 int leftElevonServoPin = SERVO4PIN;
 
+//initalize reciever input values
 float RCpitch;
 float RCyaw;
 float RCroll;
 float MODE;
 
+//define reciever pins
 int RCpitchInputPin = RX3;
 int RCyawInputPin = RX2;
 int RCrollInputPin = RX4;
 int MODEInputPin = RX1;
 
-float tailElevonOffset = 0;
-
-float optimumRotatorServoOutput;
-
+//initialize tail variables 
+float tailElevonOffset = 0; //variable to keep track of elevon offset caused by the tail
+float optimumRotatorServoOutput; //variable to keep track of optimum rotator servo position
 bool isOptimum = true;
 
+//dampener values to scale servo outputs
 float pitchDampener = 3;
 float elevonDampener = 2;
 float tailElevonOffsetDampener = 2;
 
+//timekeeping/datalog varaibles
 int iteration = 0;
 int SDiteration = 0;
 int SDdataLogFrequency = 200;
+bool dataLog = false;
 
+//initialize attitude variables
 float yaw = 0;
 float pitch = 0;
 float roll = 0;
 
-bool dataLog = false;
 
-// ================================================================
-// ===               MPU6050 STUFF- NOT MY WORK                 ===
-// ================================================================
+// MPU6050 CODE- UNORIGINAL CODE ================================================================
 
 // MPU control/status vars
 bool dmpReady = false;  // set true if DMP init was successful
@@ -215,11 +226,9 @@ void MPU6050Setup()
   }
 }
 
-//========================================================================================================================//
-//                                                      FUNCTIONS                                                         //
-//========================================================================================================================//
+//FUNCTIONS ==============================================================================================================
 
-//read pwm using interrupts
+//PWM function
 volatile unsigned long PWMTimerStartPitch;
 volatile int PWMLastInterruptTimePitch;
 
@@ -232,31 +241,29 @@ volatile int PWMLastInterruptTimeRoll;
 volatile unsigned long PWMTimerStartMODE;
 volatile int PWMLastInterruptTimeMODE;
 
+//function to read PWM using interrupt pins
 void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterruptTime, volatile unsigned long *timerStart)
 {
-  //record the interrupt time so that we can tell if the receiver has a signal from the transmitter
+  //record the interrupt time
   *lastInterruptTime = micros();
 
-  //if the pin has gone HIGH, record the microseconds since the Arduino started up
+  //start timer when detect input
   if (digitalRead(pinNum) == HIGH)
   {
     *timerStart = micros();
   }
-  //otherwise, the pin has gone LOW
   else
-  {
-
-    //only worry about this if the timer has actually started
     if (*timerStart != 0)
     {
-      //record the pulse time
-
+      //record the time between the square wave
       *channel = map(((volatile int)micros() - *timerStart), 1100, 1900, 90, -90);
-      //restart the timer
+      //reset timer
       *timerStart = 0;
     }
   }
 }
+
+//functions that have no parameter and call the main PWM reading function- used as a parameter for the attachInterrupt() function
 void PWMSignalCalculatorPitch()
 {
   PWMSignalCalculator(&RCpitch, RCpitchInputPin, &PWMLastInterruptTimePitch, &PWMTimerStartPitch);
@@ -272,6 +279,7 @@ void PWMSignalCalculatorRoll()
 void PWMSignalCalculatorMODE()
 {
   PWMSignalCalculator(&MODE, MODEInputPin, &PWMLastInterruptTimeMODE, &PWMTimerStartMODE);
+  //mode used for datalog, chagned to 0 and 1 in this function
   if (MODE < 0)
   {
     dataLog = true;
@@ -282,11 +290,13 @@ void PWMSignalCalculatorMODE()
   }
 }
 
+//radian function converts degrees to radians
 float radian(float input)
 {
   return input * (3.1416 / 180);
 }
 
+//function to calculate tail movement
 void tailMovement()
 {
   if (RCpitch == 0)
@@ -321,7 +331,8 @@ void tailMovement()
     //deflect servo to the point that we actually get correct yaw output (0.707 is the cos(45 deg))
     elevatorServoOutput = 90- abs(RCyaw / 0.707);
 
-    //figure out the extra pitch (pitch generated - pitch required (stabilzed pitch). pitch generated is tan(45 deg) times  yaw force, tan (45 deg) is 1, so pitch generated = RCyaw force generated.
+    //figure out the extra pitch (pitch generated - pitch required (stabilzed pitch). 
+    //pitch generated is tan(45 deg) times  yaw force, tan (45 deg) is 1, so pitch generated = RCyaw force generated.
     tailElevonOffset = (abs(RCpitch) - abs(RCyaw))/tailElevonOffsetDampener;
   }
   elevatorServoOutput = ((elevatorServoOutput - 90) / pitchDampener) + 90;
@@ -331,12 +342,14 @@ void tailMovement()
 
 }
 
+//function that mixes pitch and roll into elevon movmements
 void justElevons()
 {
   rightElevonServoOutput = ((RCpitch + RCroll) / elevonDampener) + 90;
   leftElevonServoOutput = (((0 - RCpitch) + RCroll) / elevonDampener) + 90;
 }
 
+//function that uses elevons with the tail- mostly just ailerons but can adjust CP of wing for the tail
 void elevonWithTail()
 {
   rightElevonServoOutput = ((RCroll) / elevonDampener) - tailElevonOffset + 90;
@@ -346,6 +359,7 @@ void elevonWithTail()
   leftElevonServoOutput = constrain(leftElevonServoOutput + leftElevonServoOutputTrim, 0, 180);
 }
 
+//writes signal to actuators
 void write()
 {
   elevatorServo.write(elevatorServoOutput + elevatorServoOutputTrim);
@@ -353,6 +367,8 @@ void write()
   rightElevonServo.write(rightElevonServoOutput + rightElevonServoOutputTrim);
   leftElevonServo.write(leftElevonServoOutput + leftElevonServoOutputTrim);
 }
+
+//outputs to serial monitor, only used for testing and debugging
 void serialOutput()
 {
 
@@ -383,6 +399,7 @@ void serialOutput()
   // Serial.print(leftElevonServoOutput);
 }
 
+//future goal; to be able to change the spread of the tail 
 void spreadCalc()
 {
   //to be implemented
@@ -393,6 +410,7 @@ void tailAdjustForSpread()
   //to be implemented
 }
 
+//function to initialize SD read write
 void SDSetup()
 {
 
@@ -456,6 +474,8 @@ void SDSetup()
     Serial.println("error opening test.txt");
   }
 }
+
+//read IMU and convert to roll pitch yaw
 void mpu6050Input()
 {
   // if programming failed, don't try to do anything
@@ -494,6 +514,8 @@ void mpu6050Input()
     yaw = 0 - yaw;
   }
 }
+
+//write flight data to SD card
 void SDOutput()
 {
   if (SDiteration >= SDdataLogFrequency)
@@ -537,15 +559,14 @@ void SDOutput()
   }
 }
 
+//keep track of iterations
 void timekeeper()
 {
-  iteration++;
-  SDiteration++;
+  iteration++; //to display iteration
+  SDiteration++; //to make sure SD card outputs at correct time
 }
 
-//========================================================================================================================//
-//                                                      VOID SETUP                                                        //
-//========================================================================================================================//
+//VOID SETUP ====================================================================================
 
 void setup()
 {
@@ -579,9 +600,8 @@ void setup()
   MPU6050Setup();
 }
 
-//========================================================================================================================//
-//                                                       MAIN LOOP                                                        //
-//========================================================================================================================//
+//MAIN LOOP ========================================================================================
+                                              
 void loop()
 {
   timekeeper();
@@ -605,6 +625,3 @@ void loop()
   mpu6050Input();
   SDOutput();
 }
-
-//tail jerky and servos jerky whyyyy
-//changed setup to not need serial port NEED TO FIGURE OUT HOW
