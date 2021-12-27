@@ -514,7 +514,6 @@ void mpu6050Input()
     else if (roll >= 0)
     {
       roll = roll - 180;
-      s
     }
     yaw = 0 - yaw;
     yawChange = (yaw - lastYaw) * yawChangeMultiplier;
