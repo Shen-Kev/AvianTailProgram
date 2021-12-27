@@ -5,10 +5,10 @@
 //Instructions for use
 
 //1: Wipe SD card
-//2: Place MPU6050 upright (plane upside down, to calibrate. when plane is level, pitch and roll are 0, when rolling right roll is positive, 
+//2: Place MPU6050 upright (plane upside down, to calibrate. when plane is level, pitch and roll are 0, when rolling right roll is positive,
 //pitch up when pitch is positive, when yaw right yaw is positive)
 //3: plug in SD card
-//4: turn on Teensy 
+//4: turn on Teensy
 //5: fly
 //6: power off teensy
 //7: unplug SD card from MAV
@@ -34,7 +34,7 @@
 //Used standard Arduino SD Library
 //https://www.arduino.cc/en/reference/SD
 
-//PWM signal code structure inspired by 
+//PWM signal code structure inspired by
 //https://www.camelsoftware.com/2015/12/25/reading-pwm-signals-from-an-rc-receiver-with-arduino/
 
 //libraries
@@ -111,8 +111,8 @@ int RCyawInputPin = RX2;
 int RCrollInputPin = RX4;
 int MODEInputPin = RX1;
 
-//initialize tail variables 
-float tailElevonOffset = 0; //variable to keep track of elevon offset caused by the tail
+//initialize tail variables
+float tailElevonOffset = 0;      //variable to keep track of elevon offset caused by the tail
 float optimumRotatorServoOutput; //variable to keep track of optimum rotator servo position
 bool isOptimum = true;
 
@@ -129,6 +129,8 @@ bool dataLog = false;
 
 //initialize attitude variables
 float yaw = 0;
+float lastYaw = 0;
+float yawChange = 0;
 float pitch = 0;
 float roll = 0;
 
@@ -251,6 +253,7 @@ void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterrupt
     *timerStart = micros();
   }
   else
+  {
     if (*timerStart != 0)
     {
       //record the time between the square wave
@@ -299,7 +302,7 @@ void tailMovement()
 {
   if (RCpitch == 0)
   {
-    RCpitch++; //no divide by 0 
+    RCpitch++; //no divide by 0
   }
   optimumRotatorServoOutput = map(degrees(atan(RCyaw / RCpitch)), 90, -90, 180, 0);
   //deadzone- if yaw force is real small and pitch is close to 0 then set yaw to 0
@@ -320,24 +323,23 @@ void tailMovement()
 
   if (isOptimum)
   {
-    elevatorServoOutput = 90+(RCpitch / (cos(radian(rotatorServoOutput - 90))));
+    elevatorServoOutput = 90 + (RCpitch / (cos(radian(rotatorServoOutput - 90))));
     rotatorServoOutput = 180 - rotatorServoOutput;
     tailElevonOffset = 0;
   }
   else
   {
     //deflect servo to the point that we actually get correct yaw output (0.707 is the cos(45 deg))
-    elevatorServoOutput = 90- abs(RCyaw / 0.707);
+    elevatorServoOutput = 90 - abs(RCyaw / 0.707);
 
-    //figure out the extra pitch (pitch generated - pitch required (stabilzed pitch). 
+    //figure out the extra pitch (pitch generated - pitch required (stabilzed pitch).
     //pitch generated is tan(45 deg) times  yaw force, tan (45 deg) is 1, so pitch generated = RCyaw force generated.
-    tailElevonOffset = (abs(RCpitch) - abs(RCyaw))/tailElevonOffsetDampener;
+    tailElevonOffset = (abs(RCpitch) - abs(RCyaw)) / tailElevonOffsetDampener;
   }
   elevatorServoOutput = ((elevatorServoOutput - 90) / pitchDampener) + 90;
 
   elevatorServoOutput = constrain(elevatorServoOutput + elevatorServoOutputTrim, 0, 180);
   rotatorServoOutput = constrain(rotatorServoOutput + rotatorServoOutputTrim, 0, 180);
-
 }
 
 //function that mixes pitch and roll into elevon movmements
@@ -397,7 +399,7 @@ void serialOutput()
   // Serial.print(leftElevonServoOutput);
 }
 
-//future goal; to be able to change the spread of the tail 
+//future goal; to be able to change the spread of the tail
 void spreadCalc()
 {
   //to be implemented
@@ -435,6 +437,8 @@ void SDSetup()
     file.print("\t");
 
     file.print("yaw");
+    file.print("\t");
+    file.print(yawChange);
     file.print("\t");
     file.print("pitch");
     file.print("\t");
@@ -487,6 +491,8 @@ void mpu6050Input()
     mpu.dmpGetQuaternion(&q, fifoBuffer);
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+    
+    lastYaw = yaw;
 
     yaw = ypr[0] * 180 / M_PI;
     pitch = ypr[2] * 180 / M_PI;
@@ -510,6 +516,8 @@ void mpu6050Input()
       roll = roll - 180;
     }
     yaw = 0 - yaw;
+    yawChange = yaw-lastYaw;
+
   }
 }
 
@@ -524,6 +532,8 @@ void SDOutput()
     file.print("\t");
 
     file.print(yaw);
+    file.print("\t");
+    file.print(yawChange);
     file.print("\t");
     file.print(pitch);
     file.print("\t");
@@ -560,7 +570,7 @@ void SDOutput()
 //keep track of iterations
 void timekeeper()
 {
-  iteration++; //to display iteration
+  iteration++;   //to display iteration
   SDiteration++; //to make sure SD card outputs at correct time
 }
 
@@ -599,7 +609,7 @@ void setup()
 }
 
 //MAIN LOOP ========================================================================================
-                                              
+
 void loop()
 {
   timekeeper();
@@ -619,7 +629,7 @@ void loop()
     elevonWithTail();
   }
   write();
-//  serialOutput();
+  //  serialOutput();
   mpu6050Input();
   SDOutput();
 }
