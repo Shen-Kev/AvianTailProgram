@@ -139,13 +139,17 @@ float PitchProportional;
 float PitchIntegral;
 float PitchDerivative;
 float PitchError;
-float PrevPitchError;
 
 float PitchOutput;
 
-float prevPitch;
+float PrevPitchError;
 float pitchChange;
 float pitchChangeMultiplier = 10;
+
+const int derivativeDelayIterations = 10;
+float pitchErrorValues[derivativeDelayIterations];
+int derivativePitchErrorIndex = 0;
+int derivativePrevPitchErrorIndex = 0;
 
 // MPU6050 CODE- UNORIGINAL CODE ================================================================
 
@@ -303,6 +307,37 @@ void PWMSignalCalculatorMODE()
   }
 }
 
+//PID Control Loop for pitch
+void PitchPID()
+{
+
+  PrevPitchError = PitchError;
+  PitchError = RCpitch - (pitchChange * pitchChangeMultiplier); //setpoint error
+
+  PitchProportional = PitchError * PitchPgain; //proportional value
+
+  if (PitchIntegral < -80) //prevent windup
+  {
+    PitchIntegral = -80;
+  }
+  else if (PitchIntegral > 80)
+  {
+    PitchIntegral = 80;
+  }
+  else
+  {
+    PitchIntegral += PitchError * PitchIgain; //discrete integration
+  }
+
+  PitchDerivative = (PitchError - PrevPitchError) * PitchDgain; //discrete derivative
+
+  PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //pitch desired calculation
+
+  Serial.println(PitchDerivative);
+
+
+}
+
 //radian function converts degrees to radians
 float radian(float input)
 {
@@ -386,7 +421,6 @@ void serialOutput()
 
   // Serial.print(yaw);
   // Serial.print("\t");
-  // Serial.print(pitch);
   // Serial.print("\t");
   // Serial.print(roll);
   // Serial.print("\t");
@@ -410,21 +444,21 @@ void serialOutput()
   // Serial.print("  left elevon: ");
   // Serial.print(leftElevonServoOutput);
 
-  Serial.print(RCpitch);
+  //Serial.print(RCpitch);
   // Serial.print("    ");
   // Serial.print(PitchProportional);
   // Serial.print("    ");
   // Serial.print(PitchIntegral);
-  // Serial.print("    ");
-  // Serial.print(PitchDerivative);
-  Serial.print("    ");
+  //Serial.print("    ");
+  //Serial.print(PitchDerivative);
+  //Serial.print("    ");
   // Serial.print(PitchError);
   // Serial.print("    ");
-  Serial.print(PitchOutput);
-  Serial.print("    ");
+  //Serial.println(PitchOutput);
+  // Serial.print("    ");
   // Serial.print(pitchChange);
   // Serial.print("    ");
-  Serial.println(elevatorServoOutput);
+  //Serial.println(elevatorServoOutput);
 }
 
 //function to initialize SD read write
@@ -524,7 +558,7 @@ void mpu6050Input()
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
     prevYaw = yaw;
-    prevPitch = pitch;
+    PrevPitchError = pitch;
 
     yaw = ypr[0] * 180 / M_PI;
     pitch = ypr[2] * 180 / M_PI;
@@ -549,7 +583,7 @@ void mpu6050Input()
     }
     yaw = 0 - yaw;
     yawChange = (yaw - prevYaw) * yawChangeMultiplier;
-    pitchChange = (pitch - prevPitch) * pitchChangeMultiplier;
+    pitchChange = (pitch - PrevPitchError) * pitchChangeMultiplier;
 
     if (yawChange >= 300 * yawChangeMultiplier || yawChange <= -300 * yawChangeMultiplier)
     { //when yaw reaches 180 and goes to -180,
@@ -560,6 +594,10 @@ void mpu6050Input()
     { //when pitch reaches 180 and goes to -180,
       pitchChange = 0;
     }
+
+    //run PID loops
+    PitchPID();
+
   }
 }
 
@@ -601,10 +639,10 @@ void SDOutput()
     file.print(RCroll);
     file.print("\t");
 
-    file.print(dataLog*100);
+    file.print(dataLog * 100);
     file.print("\t");
 
-    file.print(isOptimum*100);
+    file.print(isOptimum * 100);
     file.print("\t");
 
     file.print(elevatorServoOutput);
@@ -629,30 +667,6 @@ void timekeeper()
   SDiteration++; //to make sure SD card outputs at correct time
 }
 
-void PitchPID()
-{
-
-  PrevPitchError = PitchError; //previous error for discrete derivative
-
-  PitchError = RCpitch - (pitchChange * pitchChangeMultiplier); //setpoint error
-
-  PitchProportional = PitchError * PitchPgain; //proportional value
-
-  if (PitchIntegral < -80) //prevent windup
-  {
-    PitchIntegral = -80;
-  }
-  else if (PitchIntegral > 80) {
-    PitchIntegral = 80;
-  }
-  else {
-    PitchIntegral += PitchError * PitchIgain; //discrete integration
-  }
-
-  PitchDerivative = (PitchError - PrevPitchError) * PitchDgain; //discrete derivative
-
-  PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //pitch desired calculation
-}
 
 //VOID SETUP ====================================================================================
 
@@ -694,11 +708,10 @@ void loop()
 {
   mpu6050Input();
   timekeeper();
-  PitchPID();
   tailMovement();
   elevonWithTail();
-  
-  write();
+
+  //write();
   serialOutput();
   SDOutput();
 }
