@@ -443,15 +443,29 @@ void SDSetup()
     file.print("\t");
     file.print("pitch");
     file.print("\t");
+    file.print("pitchChange");
+    file.print("\t");
     file.print("roll");
+    file.print("\t");
+
+    file.print("PitchError");
+    file.print("\t");
+    file.print("PitchProportional");
+    file.print("\t");
+    file.print("PitchIntegral");
+    file.print("\t");
+    file.print("PitchDerivative");
     file.print("\t");
 
     file.print("RCyaw");
     file.print("\t");
     file.print("RCpitch");
     file.print("\t");
+    file.print("PitchOutput");
+    file.print("\t");
     file.print("RCroll");
     file.print("\t");
+
     file.print("dataLog");
     file.print("\t");
 
@@ -539,7 +553,6 @@ void SDOutput()
   if (SDiteration >= SDdataLogFrequency)
   {
     file = SD.open("flight_data.txt", FILE_WRITE);
-
     file.print(iteration);
     file.print("\t");
 
@@ -549,19 +562,33 @@ void SDOutput()
     file.print("\t");
     file.print(pitch);
     file.print("\t");
+    file.print(pitchChange);
+    file.print("\t");
     file.print(roll);
+    file.print("\t");
+
+    file.print(PitchError);
+    file.print("\t");
+    file.print(PitchProportional);
+    file.print("\t");
+    file.print(PitchIntegral);
+    file.print("\t");
+    file.print(PitchDerivative);
     file.print("\t");
 
     file.print(RCyaw);
     file.print("\t");
     file.print(RCpitch);
     file.print("\t");
+    file.print(PitchOutput);
+    file.print("\t");
     file.print(RCroll);
     file.print("\t");
-    file.print(dataLog * 100); //datalog and isOptimum multiplied by 100 to make it easier to see on graph
+
+    file.print(dataLog);
     file.print("\t");
 
-    file.print(isOptimum * 100);
+    file.print(isOptimum);
     file.print("\t");
 
     file.print(elevatorServoOutput);
