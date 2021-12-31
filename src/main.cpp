@@ -422,7 +422,9 @@ void serialOutput()
   Serial.print(" ");
   Serial.print(PitchOutput);
   Serial.print(" ");
-  Serial.println(pitchChange);
+  Serial.print(pitchChange);
+  Serial.print(" ");
+  Serial.println(elevatorServoOutput);
 }
 
 //function to initialize SD read write
@@ -689,7 +691,8 @@ void loop()
   PitchPID();
   tailMovement();
   elevonWithTail();
-  write();
-  //  serialOutput();
-  SDOutput();
+  
+  //write();
+  serialOutput();
+  //SDOutput();
 }
