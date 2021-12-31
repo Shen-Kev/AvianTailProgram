@@ -132,8 +132,8 @@ float roll = 0;
 //PID controller variables
 
 const float PitchPgain = 0;
-const float PitchIgain = 0;
-const float PitchDgain = 1;
+const float PitchIgain = 0.1;
+const float PitchDgain = 0;
 
 float PitchProportional;
 float PitchIntegral;
@@ -333,7 +333,9 @@ void PitchPID()
 
   PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //pitch desired calculation
 
-  Serial.println(PitchDerivative);
+  Serial.print(PitchError);
+  Serial.print(" ");
+  Serial.println(PitchIntegral);
 
 
 }
@@ -413,52 +415,6 @@ void write()
   rotatorServo.write(rotatorServoOutput + rotatorServoOutputTrim);
   rightElevonServo.write(rightElevonServoOutput + rightElevonServoOutputTrim);
   leftElevonServo.write(leftElevonServoOutput + leftElevonServoOutputTrim);
-}
-
-//outputs to serial monitor, only used for testing and debugging
-void serialOutput()
-{
-
-  // Serial.print(yaw);
-  // Serial.print("\t");
-  // Serial.print("\t");
-  // Serial.print(roll);
-  // Serial.print("\t");
-
-  // Serial.print("  isOptimum: ");
-  // Serial.print(isOptimum);
-  //Serial.print("  RCyaw: ");
-  // Serial.print(RCyaw);
-  // Serial.print("  RCpitch: ");
-  // Serial.print(RCpitch);
-  // Serial.print(" RCroll: ");
-  // Serial.println(RCroll);
-  // Serial.print("  tailElevonOffset: ");
-  // Serial.print(tailElevonOffset);
-  // Serial.print("  elevator: ");
-  // Serial.print(elevatorServoOutput);
-  // Serial.print("  rotator: ");
-  // Serial.print(rotatorServoOutput);
-  // Serial.print("  right elevon: ");
-  // Serial.print(rightElevonServoOutput);
-  // Serial.print("  left elevon: ");
-  // Serial.print(leftElevonServoOutput);
-
-  //Serial.print(RCpitch);
-  // Serial.print("    ");
-  // Serial.print(PitchProportional);
-  // Serial.print("    ");
-  // Serial.print(PitchIntegral);
-  //Serial.print("    ");
-  //Serial.print(PitchDerivative);
-  //Serial.print("    ");
-  // Serial.print(PitchError);
-  // Serial.print("    ");
-  //Serial.println(PitchOutput);
-  // Serial.print("    ");
-  // Serial.print(pitchChange);
-  // Serial.print("    ");
-  //Serial.println(elevatorServoOutput);
 }
 
 //function to initialize SD read write
@@ -712,6 +668,5 @@ void loop()
   elevonWithTail();
 
   //write();
-  serialOutput();
   SDOutput();
 }
