@@ -141,10 +141,9 @@ float PitchDerivative;
 float PitchError;
 float PrevPitchError;
 
-float PitchSetpoint;
-float PitchSetpointDivider;
+float PitchSetpoint = 0;
+float PitchSetpointDivider = 10;
 float PitchOutput;
-
 
 // MPU6050 CODE- UNORIGINAL CODE ================================================================
 
@@ -279,7 +278,16 @@ void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterrupt
 void PWMSignalCalculatorPitch()
 {
   PWMSignalCalculator(&RCpitch, RCpitchInputPin, &PWMLastInterruptTimePitch, &PWMTimerStartPitch);
-  PitchSetpoint += RCpitch/PitchSetpointDivider;
+  if (PitchSetpoint < -80) //prevent windup
+  {
+    PitchSetpoint = -80;
+  }
+  else if (PitchSetpoint > 80) {
+    PitchSetpoint = 80;
+  }
+  else {
+    PitchSetpoint += RCpitch / PitchSetpointDivider;
+  }
 }
 void PWMSignalCalculatorYaw()
 {
@@ -596,10 +604,10 @@ void SDOutput()
     file.print(RCroll);
     file.print("\t");
 
-    file.print(dataLog*100);
+    file.print(dataLog * 100);
     file.print("\t");
 
-    file.print(isOptimum*100);
+    file.print(isOptimum * 100);
     file.print("\t");
 
     file.print(elevatorServoOutput);
@@ -633,8 +641,14 @@ void PitchPID()
 
   PitchProportional = PitchError * PitchPgain; //proportional value
 
-  if (PitchIntegral <= 80 && PitchIntegral >= -80) //ani-windup
+  if (PitchIntegral < -80) //prevent windup
   {
+    PitchIntegral = -80;
+  }
+  else if (PitchIntegral > 80) {
+    PitchIntegral = 80;
+  }
+  else {
     PitchIntegral += PitchError * PitchIgain; //discrete integration
   }
 
@@ -686,8 +700,8 @@ void loop()
   PitchPID();
   tailMovement();
   elevonWithTail();
-  
- // write();
+
+  // write();
   serialOutput();
- // SDOutput();
+  // SDOutput();
 }
