@@ -393,12 +393,12 @@ void serialOutput()
 
   // Serial.print("  isOptimum: ");
   // Serial.print(isOptimum);
-  Serial.print("  RCyaw: ");
-  Serial.print(RCyaw);
-  Serial.print("  RCpitch: ");
-  Serial.print(RCpitch);
-  Serial.print(" RCroll: ");
-  Serial.println(RCroll);
+  //Serial.print("  RCyaw: ");
+  // Serial.print(RCyaw);
+  // Serial.print("  RCpitch: ");
+  // Serial.print(RCpitch);
+  // Serial.print(" RCroll: ");
+  // Serial.println(RCroll);
   // Serial.print("  tailElevonOffset: ");
   // Serial.print(tailElevonOffset);
   // Serial.print("  elevator: ");
@@ -409,6 +409,20 @@ void serialOutput()
   // Serial.print(rightElevonServoOutput);
   // Serial.print("  left elevon: ");
   // Serial.print(leftElevonServoOutput);
+
+  Serial.print(RCpitch);
+  Serial.print(" ");
+  Serial.print(PitchProportional);
+  Serial.print(" ");
+  Serial.print(PitchIntegral);
+  Serial.print(" ");
+  Serial.print(PitchDerivative);
+  Serial.print(" ");
+  Serial.print(PitchError);
+  Serial.print(" ");
+  Serial.print(PitchOutput);
+  Serial.print(" ");
+  Serial.println(pitchChange);
 }
 
 //function to initialize SD read write
