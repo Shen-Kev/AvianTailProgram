@@ -131,9 +131,9 @@ float roll = 0;
 
 //PID controller variables
 
-const float PitchPgain = 1;
+const float PitchPgain = 0;
 const float PitchIgain = 0;
-const float PitchDgain = 1;
+const float PitchDgain = 100;
 
 float PitchProportional;
 float PitchIntegral;
@@ -432,9 +432,9 @@ void serialOutput()
   // Serial.print("    ");
   Serial.print(PitchOutput);
   Serial.print("    ");
-  // Serial.print(pitchChange);
-  // Serial.print("    ");
-  Serial.println(elevatorServoOutput);
+  Serial.print(pitch);
+  Serial.print("    ");
+  Serial.println(PitchError-PrevPitchError);
 }
 
 //function to initialize SD read write
