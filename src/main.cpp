@@ -72,12 +72,6 @@ Servo rotatorServo;
 Servo rightElevonServo;
 Servo leftElevonServo;
 
-//configurations
-const bool flyingWing = false;
-const bool fullBorb = false;
-const bool noSpread = true;
-const bool diffThrust = false;
-
 //deadzone parameter
 const float deadZone = 10;
 
@@ -417,17 +411,6 @@ void serialOutput()
   // Serial.print(leftElevonServoOutput);
 }
 
-//future goal; to be able to change the spread of the tail
-void spreadCalc()
-{
-  //to be implemented
-}
-
-void tailAdjustForSpread()
-{
-  //to be implemented
-}
-
 //function to initialize SD read write
 void SDSetup()
 {
@@ -660,25 +643,12 @@ void setup()
 
 void loop()
 {
+  mpu6050Input();
   timekeeper();
-  if (flyingWing)
-  {
-    justElevons();
-  }
-  else if (fullBorb)
-  {
-    spreadCalc();
-    tailMovement();
-    tailAdjustForSpread();
-  }
-  else if (noSpread)
-  {
-    PitchPID();
-    tailMovement();
-    elevonWithTail();
-  }
+  PitchPID();
+  tailMovement();
+  elevonWithTail();
   write();
   //  serialOutput();
-  mpu6050Input();
   SDOutput();
 }
