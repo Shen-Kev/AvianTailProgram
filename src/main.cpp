@@ -129,11 +129,29 @@ bool dataLog = false;
 
 //initialize attitude variables
 float yaw = 0;
-float lastYaw = 0;
+float prevYaw = 0;
 float yawChange = 0; //yaw change is simply a visual, not an exact measurement- absolute yaw is, however
 float yawChangeMultiplier = 10;
 float pitch = 0;
 float roll = 0;
+
+//PID controller variables
+
+const float PitchPgain = 1;
+const float PitchIgain = 0;
+const float PitchDgain = 1;
+
+float PitchProportional;
+float PitchIntegral;
+float PitchDerivative;
+float PitchError;
+float PrevPitchError;
+
+float PitchOutput;
+
+float prevPitch;
+float pitchChange;
+float pitchChangeMultiplier = 10;
 
 // MPU6050 CODE- UNORIGINAL CODE ================================================================
 
@@ -300,13 +318,13 @@ float radian(float input)
 //function to calculate tail movement
 void tailMovement()
 {
-  if (RCpitch == 0)
+  if (PitchOutput == 0)
   {
-    RCpitch++; //no divide by 0
+    PitchOutput++; //no divide by 0
   }
-  optimumRotatorServoOutput = map(degrees(atan(RCyaw / RCpitch)), 90, -90, 180, 0);
+  optimumRotatorServoOutput = map(degrees(atan(RCyaw / PitchOutput)), 90, -90, 180, 0);
   //deadzone- if yaw force is real small and pitch is close to 0 then set yaw to 0
-  if (RCyaw > -deadZone && RCyaw < deadZone && RCpitch < deadZone && RCpitch > -deadZone)
+  if (RCyaw > -deadZone && RCyaw < deadZone && PitchOutput < deadZone && PitchOutput > -deadZone)
   {
     optimumRotatorServoOutput = 90;
   }
@@ -323,7 +341,7 @@ void tailMovement()
 
   if (isOptimum)
   {
-    elevatorServoOutput = 90 + (RCpitch / (cos(radian(rotatorServoOutput - 90))));
+    elevatorServoOutput = 90 + (PitchOutput / (cos(radian(rotatorServoOutput - 90))));
     rotatorServoOutput = 180 - rotatorServoOutput;
     tailElevonOffset = 0;
   }
@@ -334,7 +352,7 @@ void tailMovement()
 
     //figure out the extra pitch (pitch generated - pitch required (stabilzed pitch).
     //pitch generated is tan(45 deg) times  yaw force, tan (45 deg) is 1, so pitch generated = RCyaw force generated.
-    tailElevonOffset = (abs(RCpitch) - abs(RCyaw)) / tailElevonOffsetDampener;
+    tailElevonOffset = (abs(PitchOutput) - abs(RCyaw)) / tailElevonOffsetDampener;
   }
   elevatorServoOutput = ((elevatorServoOutput - 90) / pitchDampener) + 90;
 
@@ -492,7 +510,8 @@ void mpu6050Input()
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
-    lastYaw = yaw;
+    prevYaw = yaw;
+    prevPitch = pitch;
 
     yaw = ypr[0] * 180 / M_PI;
     pitch = ypr[2] * 180 / M_PI;
@@ -516,10 +535,17 @@ void mpu6050Input()
       roll = roll - 180;
     }
     yaw = 0 - yaw;
-    yawChange = (yaw - lastYaw) * yawChangeMultiplier;
+    yawChange = (yaw - prevYaw) * yawChangeMultiplier;
+    pitchChange = (pitch - prevPitch) * pitchChangeMultiplier;
+
     if (yawChange >= 300 * yawChangeMultiplier || yawChange <= -300 * yawChangeMultiplier)
     { //when yaw reaches 180 and goes to -180,
       yawChange = 0;
+    }
+
+    if (pitchChange >= 300 * pitchChangeMultiplier || pitchChange <= -300 * pitchChangeMultiplier)
+    { //when pitch reaches 180 and goes to -180,
+      pitchChange = 0;
     }
   }
 }
@@ -577,6 +603,25 @@ void timekeeper()
   SDiteration++; //to make sure SD card outputs at correct time
 }
 
+void PitchPID()
+{
+
+  PrevPitchError = PitchError;
+
+  PitchError = RCpitch - (pitchChange * pitchChangeMultiplier);
+
+  PitchProportional = PitchError * PitchPgain;
+
+  if (PitchIntegral <= 80 && PitchIntegral >= -80)
+  {
+    PitchIntegral += PitchError * PitchIgain;
+  }
+
+  PitchDerivative = (PitchError - PrevPitchError) * PitchDgain;
+
+  PitchOutput = PitchProportional + PitchIntegral + PitchDerivative;
+}
+
 //VOID SETUP ====================================================================================
 
 void setup()
@@ -628,6 +673,7 @@ void loop()
   }
   else if (noSpread)
   {
+    PitchPID();
     tailMovement();
     elevonWithTail();
   }
