@@ -141,11 +141,10 @@ float PitchDerivative;
 float PitchError;
 float PrevPitchError;
 
+float PitchSetpoint;
+float PitchSetpointDivider;
 float PitchOutput;
 
-float prevPitch;
-float pitchChange;
-float pitchChangeMultiplier = 10;
 
 // MPU6050 CODE- UNORIGINAL CODE ================================================================
 
@@ -280,6 +279,7 @@ void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterrupt
 void PWMSignalCalculatorPitch()
 {
   PWMSignalCalculator(&RCpitch, RCpitchInputPin, &PWMLastInterruptTimePitch, &PWMTimerStartPitch);
+  PitchSetpoint += RCpitch/PitchSetpointDivider;
 }
 void PWMSignalCalculatorYaw()
 {
@@ -412,7 +412,7 @@ void serialOutput()
   // Serial.print("  left elevon: ");
   // Serial.print(leftElevonServoOutput);
 
-  Serial.print(RCpitch);
+  Serial.print(PitchSetpoint);
   // Serial.print("    ");
   // Serial.print(PitchProportional);
   // Serial.print("    ");
@@ -461,7 +461,7 @@ void SDSetup()
     file.print("\t");
     file.print("pitch");
     file.print("\t");
-    file.print("pitchChange");
+    file.print("PitchSetpoint");
     file.print("\t");
     file.print("roll");
     file.print("\t");
@@ -526,7 +526,6 @@ void mpu6050Input()
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
     prevYaw = yaw;
-    prevPitch = pitch;
 
     yaw = ypr[0] * 180 / M_PI;
     pitch = ypr[2] * 180 / M_PI;
@@ -551,16 +550,10 @@ void mpu6050Input()
     }
     yaw = 0 - yaw;
     yawChange = (yaw - prevYaw) * yawChangeMultiplier;
-    pitchChange = (pitch - prevPitch) * pitchChangeMultiplier;
 
     if (yawChange >= 300 * yawChangeMultiplier || yawChange <= -300 * yawChangeMultiplier)
     { //when yaw reaches 180 and goes to -180,
       yawChange = 0;
-    }
-
-    if (pitchChange >= 300 * pitchChangeMultiplier || pitchChange <= -300 * pitchChangeMultiplier)
-    { //when pitch reaches 180 and goes to -180,
-      pitchChange = 0;
     }
   }
 }
@@ -580,7 +573,7 @@ void SDOutput()
     file.print("\t");
     file.print(pitch);
     file.print("\t");
-    file.print(pitchChange);
+    file.print(PitchSetpoint);
     file.print("\t");
     file.print(roll);
     file.print("\t");
@@ -634,20 +627,20 @@ void timekeeper()
 void PitchPID()
 {
 
-  PrevPitchError = PitchError;
+  PrevPitchError = PitchError; //to get previous error
 
-  PitchError = RCpitch - (pitchChange * pitchChangeMultiplier);
+  PitchError = RCpitch - PitchSetpoint; //to get error
 
-  PitchProportional = PitchError * PitchPgain;
+  PitchProportional = PitchError * PitchPgain; //proportional value
 
-  if (PitchIntegral <= 80 && PitchIntegral >= -80)
+  if (PitchIntegral <= 80 && PitchIntegral >= -80) //ani-windup
   {
-    PitchIntegral += PitchError * PitchIgain;
+    PitchIntegral += PitchError * PitchIgain; //discrete integration
   }
 
-  PitchDerivative = (PitchError - PrevPitchError) * PitchDgain;
+  PitchDerivative = (PitchError - PrevPitchError) * PitchDgain; //discrete derivative
 
-  PitchOutput = PitchProportional + PitchIntegral + PitchDerivative;
+  PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //summing everything to get output
 }
 
 //VOID SETUP ====================================================================================
@@ -694,7 +687,7 @@ void loop()
   tailMovement();
   elevonWithTail();
   
-  write();
+ // write();
   serialOutput();
-  SDOutput();
+ // SDOutput();
 }
