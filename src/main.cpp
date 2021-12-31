@@ -142,7 +142,7 @@ float PitchError;
 float PrevPitchError;
 
 float PitchSetpoint = 0;
-float PitchSetpointDivider = 10;
+float PitchSetpointDivider = 50;
 float PitchOutput;
 
 // MPU6050 CODE- UNORIGINAL CODE ================================================================
@@ -637,7 +637,7 @@ void PitchPID()
 
   PrevPitchError = PitchError; //to get previous error
 
-  PitchError = RCpitch - PitchSetpoint; //to get error
+  PitchError = PitchSetpoint - pitch; //to get error
 
   PitchProportional = PitchError * PitchPgain; //proportional value
 
