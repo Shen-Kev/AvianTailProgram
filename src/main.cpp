@@ -120,8 +120,6 @@ int iteration = 0;
 int SDiteration = 0;
 int SDdataLogFrequency = 200;
 bool dataLog = false;
-int PitchPIDiteraiton = 0;
-int PitchPIDiterationFrequency = 50;
 
 //initialize attitude variables
 float yaw = 0;
@@ -603,10 +601,10 @@ void SDOutput()
     file.print(RCroll);
     file.print("\t");
 
-    file.print(dataLog * 100);
+    file.print(dataLog*100);
     file.print("\t");
 
-    file.print(isOptimum * 100);
+    file.print(isOptimum*100);
     file.print("\t");
 
     file.print(elevatorServoOutput);
@@ -634,33 +632,26 @@ void timekeeper()
 void PitchPID()
 {
 
-  if (PitchPIDiteraiton >= PitchPIDiterationFrequency)
+  PrevPitchError = PitchError; //previous error for discrete derivative
+
+  PitchError = RCpitch - (pitchChange * pitchChangeMultiplier); //setpoint error
+
+  PitchProportional = PitchError * PitchPgain; //proportional value
+
+  if (PitchIntegral < -80) //prevent windup
   {
-
-    PrevPitchError = PitchError; //previous error for discrete derivative
-
-    PitchError = RCpitch - (pitchChange * pitchChangeMultiplier); //setpoint error
-
-    PitchProportional = PitchError * PitchPgain; //proportional value
-
-    if (PitchIntegral < -80) //prevent windup
-    {
-      PitchIntegral = -80;
-    }
-    else if (PitchIntegral > 80)
-    {
-      PitchIntegral = 80;
-    }
-    else
-    {
-      PitchIntegral += PitchError * PitchIgain; //discrete integration
-    }
-
-    PitchDerivative = (PitchError - PrevPitchError) * PitchDgain; //discrete derivative
-
-    PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //pitch desired calculation
-    PitchPIDiteraiton = 0;
+    PitchIntegral = -80;
   }
+  else if (PitchIntegral > 80) {
+    PitchIntegral = 80;
+  }
+  else {
+    PitchIntegral += PitchError * PitchIgain; //discrete integration
+  }
+
+  PitchDerivative = (PitchError - PrevPitchError) * PitchDgain; //discrete derivative
+
+  PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //pitch desired calculation
 }
 
 //VOID SETUP ====================================================================================
@@ -706,7 +697,7 @@ void loop()
   PitchPID();
   tailMovement();
   elevonWithTail();
-
+  
   write();
   serialOutput();
   SDOutput();
