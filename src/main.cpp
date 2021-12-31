@@ -333,6 +333,8 @@ void tailMovement()
   }
   rotatorServoOutput = constrain(optimumRotatorServoOutput, 45, 135);
 
+  //IS OPTIMUM
+
   if (isOptimum)
   {
     elevatorServoOutput = 90 + (PitchOutput / (cos(radian(rotatorServoOutput - 90))));
@@ -411,19 +413,19 @@ void serialOutput()
   // Serial.print(leftElevonServoOutput);
 
   Serial.print(RCpitch);
-  Serial.print(" ");
-  Serial.print(PitchProportional);
-  Serial.print(" ");
-  Serial.print(PitchIntegral);
-  Serial.print(" ");
-  Serial.print(PitchDerivative);
-  Serial.print(" ");
-  Serial.print(PitchError);
-  Serial.print(" ");
+  // Serial.print("    ");
+  // Serial.print(PitchProportional);
+  // Serial.print("    ");
+  // Serial.print(PitchIntegral);
+  // Serial.print("    ");
+  // Serial.print(PitchDerivative);
+  Serial.print("    ");
+  // Serial.print(PitchError);
+  // Serial.print("    ");
   Serial.print(PitchOutput);
-  Serial.print(" ");
-  Serial.print(pitchChange);
-  Serial.print(" ");
+  Serial.print("    ");
+  // Serial.print(pitchChange);
+  // Serial.print("    ");
   Serial.println(elevatorServoOutput);
 }
 
@@ -601,10 +603,10 @@ void SDOutput()
     file.print(RCroll);
     file.print("\t");
 
-    file.print(dataLog);
+    file.print(dataLog*100);
     file.print("\t");
 
-    file.print(isOptimum);
+    file.print(isOptimum*100);
     file.print("\t");
 
     file.print(elevatorServoOutput);
@@ -692,7 +694,7 @@ void loop()
   tailMovement();
   elevonWithTail();
   
-  //write();
+  write();
   serialOutput();
-  //SDOutput();
+  SDOutput();
 }
