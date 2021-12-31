@@ -132,7 +132,7 @@ float roll = 0;
 //PID controller variables
 
 const float PitchPgain = 0;
-const float PitchIgain = 0.1;
+const float PitchIgain = 0.05;
 const float PitchDgain = 0;
 
 float PitchProportional;
@@ -146,10 +146,7 @@ float PrevPitchError;
 float pitchChange;
 float pitchChangeMultiplier = 10;
 
-const int derivativeDelayIterations = 10;
-float pitchErrorValues[derivativeDelayIterations];
-int derivativePitchErrorIndex = 0;
-int derivativePrevPitchErrorIndex = 0;
+int PitchIntegralSaturationLimit = 45;
 
 // MPU6050 CODE- UNORIGINAL CODE ================================================================
 
@@ -316,13 +313,13 @@ void PitchPID()
 
   PitchProportional = PitchError * PitchPgain; //proportional value
 
-  if (PitchIntegral < -80) //prevent windup
+  if (PitchIntegral < -PitchIntegralSaturationLimit) //prevent windup
   {
-    PitchIntegral = -80;
+    PitchIntegral = -PitchIntegralSaturationLimit;
   }
-  else if (PitchIntegral > 80)
+  else if (PitchIntegral > PitchIntegralSaturationLimit)
   {
-    PitchIntegral = 80;
+    PitchIntegral = PitchIntegralSaturationLimit;
   }
   else
   {
