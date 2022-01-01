@@ -128,7 +128,7 @@ float prevYaw = 0;
 float yawChange = 0; //yaw change is simply a visual, not an exact measurement- absolute yaw is, however
 float pitch = 0;
 float roll = 0;
-float spikeThreshold = 90; //deg/sec
+float spikeThreshold = 360; //deg/sec
 
 //PID controller variables
 
@@ -145,7 +145,7 @@ float PitchOutput;
 
 float PrevPitchError;
 float pitchChange; //degrees per second
-float PitchIntegralSaturationLimit = 45; //in degrees per second
+float PitchIntegralSaturationLimit = 45; //servo position offset of 90 degrees
 
 float timeBetweenIMUInputs;
 
