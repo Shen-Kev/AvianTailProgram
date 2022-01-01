@@ -128,14 +128,13 @@ float yawChange = 0; //yaw change is simply a visual, not an exact measurement- 
 float yawChangeMultiplier = 10;
 float pitch = 0;
 float roll = 0;
+float spikeThreshold = 10;
 
 //PID controller variables
 
 float PitchPgain = 0.5;
 float PitchIgain = 0.01; //0.01
 float PitchDgain = 0;
-
-
 
 float PitchProportional;
 float PitchIntegral;
@@ -148,7 +147,7 @@ float PrevPitchError;
 float pitchChange;
 float pitchChangeMultiplier = 10;
 
-int PitchIntegralSaturationLimit = 45;
+float PitchIntegralSaturationLimit = 45;
 
 // MPU6050 CODE- UNORIGINAL CODE ================================================================
 
@@ -332,7 +331,7 @@ void PitchPID()
 
   PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //pitch desired calculation
 
-  Serial.println(PitchOutput);
+  Serial.println(pitchChange);
 
   PitchOutput = constrain(PitchOutput, -90, 90);
 
@@ -540,14 +539,15 @@ void mpu6050Input()
     yawChange = (yaw - prevYaw) * yawChangeMultiplier;
     pitchChange = (pitch - PrevPitchError) * pitchChangeMultiplier;
 
-    if (yawChange >= 300 * yawChangeMultiplier || yawChange <= -300 * yawChangeMultiplier)
-    { //when yaw reaches 180 and goes to -180,
+    if (yawChange >= spikeThreshold * yawChangeMultiplier || yawChange <= -spikeThreshold * yawChangeMultiplier)
+    { 
       yawChange = 0;
     }
 
-    if (pitchChange >= 300 * pitchChangeMultiplier || pitchChange <= -300 * pitchChangeMultiplier)
-    { //when pitch reaches 180 and goes to -180,
+    if (pitchChange >= spikeThreshold * pitchChangeMultiplier || pitchChange <= -spikeThreshold * pitchChangeMultiplier)
+    { 
       pitchChange = 0;
+      Serial.println("AHHHHHHHHHHHH");
     }
 
     //run PID loops
