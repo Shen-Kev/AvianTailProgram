@@ -131,9 +131,11 @@ float roll = 0;
 
 //PID controller variables
 
-const float PitchPgain = 0;
-const float PitchIgain = 0.05;
-const float PitchDgain = 0;
+float PitchPgain = 0.5;
+float PitchIgain = 0; //0.01
+float PitchDgain = 1;
+
+
 
 float PitchProportional;
 float PitchIntegral;
@@ -330,9 +332,9 @@ void PitchPID()
 
   PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //pitch desired calculation
 
-  Serial.print(PitchError);
-  Serial.print(" ");
-  Serial.println(PitchIntegral);
+  Serial.println(PitchOutput);
+
+  PitchOutput = constrain(PitchOutput, -90, 90);
 
 
 }
