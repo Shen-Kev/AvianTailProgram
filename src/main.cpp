@@ -305,7 +305,7 @@ void PWMSignalCalculatorMODE()
   }
 }
 
-//PID Control Loop for pitch
+//PI Control Loop for pitch
 void PitchPID()
 {
 
@@ -332,7 +332,7 @@ void PitchPID()
   PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //pitch desired calculation
 
   PitchOutput = constrain(PitchOutput, -90, 90);
-  Serial.println(pitchChange);
+  Serial.println(PitchOutput);
 
 
 }
@@ -440,15 +440,15 @@ void SDSetup()
     file.print("time(s)");
     file.print("\t");
 
-    file.print("yaw");
+    file.print("yaw(deg)");
     file.print("\t");
-    file.print("yawChange");
+    file.print("yawChange(deg/s)");
     file.print("\t");
-    file.print("pitch");
+    file.print("pitch(deg)");
     file.print("\t");
-    file.print("pitchChange");
+    file.print("pitchChange(deg/s)");
     file.print("\t");
-    file.print("roll");
+    file.print("roll(deg)");
     file.print("\t");
 
     file.print("PitchError");
