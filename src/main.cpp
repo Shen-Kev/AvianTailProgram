@@ -132,8 +132,8 @@ float roll = 0;
 //PID controller variables
 
 float PitchPgain = 0.5;
-float PitchIgain = 0; //0.01
-float PitchDgain = 1;
+float PitchIgain = 0.01; //0.01
+float PitchDgain = 0;
 
 
 
@@ -328,7 +328,7 @@ void PitchPID()
     PitchIntegral += PitchError * PitchIgain; //discrete integration
   }
 
-  PitchDerivative = (PitchError - PrevPitchError) * PitchDgain; //discrete derivative
+  PitchDerivative = 0;//(PitchError - PrevPitchError) * PitchDgain; //discrete derivative
 
   PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //pitch desired calculation
 
