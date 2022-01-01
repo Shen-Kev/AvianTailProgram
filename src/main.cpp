@@ -115,8 +115,9 @@ float pitchDampener = 3;
 float elevonDampener = 2;
 float tailElevonOffsetDampener = 2;
 
-//timekeeping/datalog varaibles
-int iteration = 0;
+//timekeeping varaibles
+float timeInSeconds;
+float previousIMUTimeInSeconds;
 int SDiteration = 0;
 int SDdataLogFrequency = 200;
 bool dataLog = false;
@@ -125,15 +126,14 @@ bool dataLog = false;
 float yaw = 0;
 float prevYaw = 0;
 float yawChange = 0; //yaw change is simply a visual, not an exact measurement- absolute yaw is, however
-float yawChangeMultiplier = 10;
 float pitch = 0;
 float roll = 0;
-float spikeThreshold = 10;
+float spikeThreshold = 90; //deg/sec
 
 //PID controller variables
 
 float PitchPgain = 0.5;
-float PitchIgain = 0.01; //0.01
+float PitchIgain = 0.02;
 float PitchDgain = 0;
 
 float PitchProportional;
@@ -144,10 +144,10 @@ float PitchError;
 float PitchOutput;
 
 float PrevPitchError;
-float pitchChange;
-float pitchChangeMultiplier = 10;
+float pitchChange; //degrees per second
+float PitchIntegralSaturationLimit = 45; //in degrees per second
 
-float PitchIntegralSaturationLimit = 45;
+float timeBetweenIMUInputs;
 
 // MPU6050 CODE- UNORIGINAL CODE ================================================================
 
@@ -310,7 +310,7 @@ void PitchPID()
 {
 
   PrevPitchError = PitchError;
-  PitchError = RCpitch - (pitchChange * pitchChangeMultiplier); //setpoint error
+  PitchError = RCpitch - pitchChange; //setpoint error
 
   PitchProportional = PitchError * PitchPgain; //proportional value
 
@@ -436,7 +436,7 @@ void SDSetup()
   {
     Serial.print("Writing to flight_data.txt...");
 
-    file.print("iteration");
+    file.print("time(s)");
     file.print("\t");
 
     file.print("yaw");
@@ -509,6 +509,9 @@ void mpu6050Input()
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
+    timeBetweenIMUInputs = timeInSeconds-previousIMUTimeInSeconds;
+    previousIMUTimeInSeconds = timeInSeconds;
+
     prevYaw = yaw;
     PrevPitchError = pitch;
 
@@ -534,17 +537,16 @@ void mpu6050Input()
       roll = roll - 180;
     }
     yaw = 0 - yaw;
-    yawChange = (yaw - prevYaw) * yawChangeMultiplier;
-    pitchChange = (pitch - PrevPitchError) * pitchChangeMultiplier;
+    yawChange = (yaw - prevYaw)/previousIMUTimeInSeconds; //dx/dt (discrete derivative)
+    pitchChange = (pitch - PrevPitchError)/previousIMUTimeInSeconds;
 
-    if (yawChange >= spikeThreshold * yawChangeMultiplier || yawChange <= -spikeThreshold * yawChangeMultiplier)
+    if (yawChange >= spikeThreshold || yawChange <= -spikeThreshold)
     { 
       yawChange = 0;
     }
 
-    if (pitchChange >= spikeThreshold * pitchChangeMultiplier || pitchChange <= -spikeThreshold * pitchChangeMultiplier)
+    if (pitchChange >= spikeThreshold || pitchChange <= -spikeThreshold)
     { 
-      Serial.println(pitchChange);
       pitchChange = 0;
     }
 
@@ -560,7 +562,7 @@ void SDOutput()
   if (SDiteration >= SDdataLogFrequency)
   {
     file = SD.open("flight_data.txt", FILE_WRITE);
-    file.print(iteration);
+    file.print(timeInSeconds);
     file.print("\t");
 
     file.print(yaw);
@@ -616,7 +618,7 @@ void SDOutput()
 //keep track of iterations
 void timekeeper()
 {
-  iteration++;   //to display iteration
+  timeInSeconds = millis()/1000;
   SDiteration++; //to make sure SD card outputs at correct time
 }
 
@@ -664,6 +666,6 @@ void loop()
   tailMovement();
   elevonWithTail();
 
-  //write();
+  write();
   SDOutput();
 }
