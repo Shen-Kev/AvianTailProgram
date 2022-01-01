@@ -271,7 +271,7 @@ void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterrupt
     if (*timerStart != 0)
     {
       //record the time between the square wave
-      *channel = map(((volatile int)micros() - *timerStart), 1100.0, 1900.0, 90.0, -90.0);
+      *channel = map(((volatile float)micros() - *timerStart), 1100.0, 1900.0, 90.0, -90.0);
       //reset timer
       *timerStart = 0;
     }
@@ -666,6 +666,8 @@ void loop()
   tailMovement();
   elevonWithTail();
 
-  write();
+  //write();
+  Serial.println(RCpitch);
+  //Serial.println(pitchChange);
   SDOutput();
 }
