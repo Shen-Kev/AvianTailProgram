@@ -332,6 +332,7 @@ void PitchPID()
   PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //pitch desired calculation
 
   PitchOutput = constrain(PitchOutput, -90, 90);
+  Serial.println(pitchChange);
 
 
 }
@@ -537,8 +538,8 @@ void mpu6050Input()
       roll = roll - 180;
     }
     yaw = 0 - yaw;
-    yawChange = (yaw - prevYaw)/previousIMUTimeInSeconds; //dx/dt (discrete derivative)
-    pitchChange = (pitch - PrevPitchError)/previousIMUTimeInSeconds;
+    yawChange = (yaw - prevYaw)/timeBetweenIMUInputs; //dx/dt (discrete derivative)
+    pitchChange = (pitch - PrevPitchError)/timeBetweenIMUInputs;
 
     if (yawChange >= spikeThreshold || yawChange <= -spikeThreshold)
     { 
@@ -667,7 +668,5 @@ void loop()
   elevonWithTail();
 
   //write();
-  Serial.println(RCpitch);
-  //Serial.println(pitchChange);
   SDOutput();
 }
