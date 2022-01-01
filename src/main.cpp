@@ -331,8 +331,6 @@ void PitchPID()
 
   PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //pitch desired calculation
 
-  Serial.println(pitchChange);
-
   PitchOutput = constrain(PitchOutput, -90, 90);
 
 
@@ -546,8 +544,8 @@ void mpu6050Input()
 
     if (pitchChange >= spikeThreshold * pitchChangeMultiplier || pitchChange <= -spikeThreshold * pitchChangeMultiplier)
     { 
+      Serial.println(pitchChange);
       pitchChange = 0;
-      Serial.println("AHHHHHHHHHHHH");
     }
 
     //run PID loops
