@@ -271,7 +271,7 @@ void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterrupt
     if (*timerStart != 0)
     {
       //record the time between the square wave
-      *channel = map(((volatile int)micros() - *timerStart), 1100, 1900, 90, -90);
+      *channel = map(((volatile int)micros() - *timerStart), 1100.0, 1900.0, 90.0, -90.0);
       //reset timer
       *timerStart = 0;
     }
@@ -618,7 +618,7 @@ void SDOutput()
 //keep track of iterations
 void timekeeper()
 {
-  timeInSeconds = millis()/1000;
+  timeInSeconds = millis()/1000.0;
   SDiteration++; //to make sure SD card outputs at correct time
 }
 
