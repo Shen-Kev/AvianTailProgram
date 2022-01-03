@@ -397,19 +397,15 @@ void tailMovementTailDroop10Deg()
   isOptimum = true;
   if (PitchOutput > elevatorDegreeToCreateZeroTailForce-deadZone && PitchOutput < elevatorDegreeToCreateZeroTailForce+deadZone)
   {
-    PitchOutput = elevatorDegreeToCreateZeroTailForce-deadZone;
-    rotatorServoOutput = 90;
-    isOptimum = false;
+    PitchOutput = elevatorDegreeToCreateZeroTailForce-deadZone; //pitch is set to pitch up just under the deadzone, to where yaw can be generated
+    isOptimum = false; //to log in data
 
-  }
-  else {
-    //figure out what angle to generate the correct yaw force
-    rotatorServoOutput = map(degrees(atan(RCyaw / totalTailAngle)), 90, -90, 180, 0);
   }
   
   totalTailAngle = PitchOutput - elevatorDegreeToCreateZeroTailForce; 
 
-
+  //figure out what angle to generate the correct yaw force
+  rotatorServoOutput = map(degrees(atan(RCyaw / totalTailAngle)), 90, -90, 180, 0);
   elevatorServoOutput = 90 + ((PitchOutput / (cos(radian(rotatorServoOutput - 90)))));
 
   elevatorServoOutput = constrain(elevatorServoOutput + elevatorServoOutputTrim, 0, 180);
@@ -690,13 +686,13 @@ void loop()
 {
   mpu6050Input();
   timekeeper();
-  PitchOutput = RCpitch;
+  // PitchOutput = RCpitch;
   tailMovementTailDroop10Deg();
-  Serial.print(rotatorServoOutput);
-  Serial.print("   ");
-  Serial.println(elevatorServoOutput);
+  // Serial.print(rotatorServoOutput);
+  // Serial.print("   ");
+  // Serial.println(elevatorServoOutput);
   elevonWithTail();
 
-  //write();
+  write();
   SDOutput();
 }
