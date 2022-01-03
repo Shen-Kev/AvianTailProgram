@@ -72,7 +72,6 @@ Servo rotatorServo;
 Servo rightElevonServo;
 Servo leftElevonServo;
 
-
 //initalize servo outputs
 float elevatorServoOutput = 90;
 float rotatorServoOutput = 90;
@@ -130,7 +129,7 @@ float prevYaw = 0;
 float yawChange = 0; //yaw change is simply a visual, not an exact measurement- absolute yaw is, however
 float pitch = 0;
 float roll = 0;
-float spikeThreshold = 360; //deg/sec 
+float spikeThreshold = 360; //deg/sec
 
 //PID controller variables
 
@@ -284,7 +283,7 @@ void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterrupt
 void PWMSignalCalculatorPitch()
 {
   PWMSignalCalculator(&RCpitch, RCpitchInputPin, &PWMLastInterruptTimePitch, &PWMTimerStartPitch);
-  RCpitch = RCpitch/RCpitchDampener;
+  RCpitch = RCpitch / RCpitchDampener;
 }
 void PWMSignalCalculatorYaw()
 {
@@ -391,18 +390,16 @@ void tailMovement()
 
 void tailMovementTailDroop10Deg()
 {
+  isOptimum = true;
+  
+  if (PitchOutput > elevatorDegreeToCreateZeroTailForce - deadZone && PitchOutput < elevatorDegreeToCreateZeroTailForce + deadZone)
+  {
+    PitchOutput = elevatorDegreeToCreateZeroTailForce - deadZone; //pitch is set to pitch up just under the deadzone, to where yaw can be generated
+    isOptimum = false;                                            //to log in data
+  }
 
   //actual tail force- note when tail force is 0 the MAV will pitch up, but when PitchOutput is 0 MAV should stay level
-  
-  isOptimum = true;
-  if (PitchOutput > elevatorDegreeToCreateZeroTailForce-deadZone && PitchOutput < elevatorDegreeToCreateZeroTailForce+deadZone)
-  {
-    PitchOutput = elevatorDegreeToCreateZeroTailForce-deadZone; //pitch is set to pitch up just under the deadzone, to where yaw can be generated
-    isOptimum = false; //to log in data
-
-  }
-  
-  totalTailAngle = PitchOutput - elevatorDegreeToCreateZeroTailForce; 
+  totalTailAngle = PitchOutput - elevatorDegreeToCreateZeroTailForce;
 
   //figure out what angle to generate the correct yaw force
   rotatorServoOutput = map(degrees(atan(RCyaw / totalTailAngle)), 90, -90, 180, 0);
