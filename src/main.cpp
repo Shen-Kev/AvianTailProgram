@@ -72,8 +72,6 @@ Servo rotatorServo;
 Servo rightElevonServo;
 Servo leftElevonServo;
 
-//deadzone parameter
-const float deadZone = 10;
 
 //initalize servo outputs
 float elevatorServoOutput = 90;
@@ -110,8 +108,12 @@ float tailElevonOffset = 0;      //variable to keep track of elevon offset cause
 float optimumRotatorServoOutput; //variable to keep track of optimum rotator servo position
 bool isOptimum = true;
 
+float elevatorDegreeToCreateZeroTailForce = 25; //15 degrees, whatever 15 degrees is for the servo, which is about 3/2 more
+float totalTailAngle;
+const float deadZone = 5;
+
 //dampener values to scale servo outputs
-float pitchDampener = 3;
+float RCpitchDampener = 3;
 float elevonDampener = 2;
 float tailElevonOffsetDampener = 2;
 
@@ -128,7 +130,7 @@ float prevYaw = 0;
 float yawChange = 0; //yaw change is simply a visual, not an exact measurement- absolute yaw is, however
 float pitch = 0;
 float roll = 0;
-float spikeThreshold = 360; //deg/sec
+float spikeThreshold = 360; //deg/sec 
 
 //PID controller variables
 
@@ -144,7 +146,7 @@ float PitchError;
 float PitchOutput;
 
 float PrevPitchError;
-float pitchChange; //degrees per second
+float pitchChange;                       //degrees per second
 float PitchIntegralSaturationLimit = 45; //servo position offset of 90 degrees
 
 float timeBetweenIMUInputs;
@@ -282,6 +284,7 @@ void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterrupt
 void PWMSignalCalculatorPitch()
 {
   PWMSignalCalculator(&RCpitch, RCpitchInputPin, &PWMLastInterruptTimePitch, &PWMTimerStartPitch);
+  RCpitch = RCpitch/RCpitchDampener;
 }
 void PWMSignalCalculatorYaw()
 {
@@ -327,14 +330,12 @@ void PitchPID()
     PitchIntegral += PitchError * PitchIgain; //discrete integration
   }
 
-  PitchDerivative = 0;//(PitchError - PrevPitchError) * PitchDgain; //discrete derivative
+  PitchDerivative = 0; //(PitchError - PrevPitchError) * PitchDgain; //discrete derivative
 
   PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //pitch desired calculation
 
   PitchOutput = constrain(PitchOutput, -90, 90);
   Serial.println(PitchOutput);
-
-
 }
 
 //radian function converts degrees to radians
@@ -382,10 +383,37 @@ void tailMovement()
     //pitch generated is tan(45 deg) times  yaw force, tan (45 deg) is 1, so pitch generated = RCyaw force generated.
     tailElevonOffset = (abs(PitchOutput) - abs(RCyaw)) / tailElevonOffsetDampener;
   }
-  elevatorServoOutput = ((elevatorServoOutput - 90) / pitchDampener) + 90;
+  elevatorServoOutput = ((elevatorServoOutput - 90) / RCpitchDampener) + 90;
 
   elevatorServoOutput = constrain(elevatorServoOutput + elevatorServoOutputTrim, 0, 180);
   rotatorServoOutput = constrain(rotatorServoOutput + rotatorServoOutputTrim, 0, 180);
+}
+
+void tailMovementTailDroop10Deg()
+{
+
+  //actual tail force- note when tail force is 0 the MAV will pitch up, but when PitchOutput is 0 MAV should stay level
+  
+  isOptimum = true;
+  if (PitchOutput > elevatorDegreeToCreateZeroTailForce-deadZone && PitchOutput < elevatorDegreeToCreateZeroTailForce+deadZone)
+  {
+    PitchOutput = elevatorDegreeToCreateZeroTailForce-deadZone;
+    rotatorServoOutput = 90;
+    isOptimum = false;
+
+  }
+  else {
+    //figure out what angle to generate the correct yaw force
+    rotatorServoOutput = map(degrees(atan(RCyaw / totalTailAngle)), 90, -90, 180, 0);
+  }
+  
+  totalTailAngle = PitchOutput - elevatorDegreeToCreateZeroTailForce; 
+
+
+  elevatorServoOutput = 90 + ((PitchOutput / (cos(radian(rotatorServoOutput - 90)))));
+
+  elevatorServoOutput = constrain(elevatorServoOutput + elevatorServoOutputTrim, 0, 180);
+  rotatorServoOutput = constrain(rotatorServoOutput + rotatorServoOutputTrim, 45, 135);
 }
 
 //function that mixes pitch and roll into elevon movmements
@@ -510,7 +538,7 @@ void mpu6050Input()
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
-    timeBetweenIMUInputs = timeInSeconds-previousIMUTimeInSeconds;
+    timeBetweenIMUInputs = timeInSeconds - previousIMUTimeInSeconds;
     previousIMUTimeInSeconds = timeInSeconds;
 
     prevYaw = yaw;
@@ -538,22 +566,21 @@ void mpu6050Input()
       roll = roll - 180;
     }
     yaw = 0 - yaw;
-    yawChange = (yaw - prevYaw)/timeBetweenIMUInputs; //dx/dt (discrete derivative)
-    pitchChange = (pitch - PrevPitchError)/timeBetweenIMUInputs;
+    yawChange = (yaw - prevYaw) / timeBetweenIMUInputs; //dx/dt (discrete derivative)
+    pitchChange = (pitch - PrevPitchError) / timeBetweenIMUInputs;
 
     if (yawChange >= spikeThreshold || yawChange <= -spikeThreshold)
-    { 
+    {
       yawChange = 0;
     }
 
     if (pitchChange >= spikeThreshold || pitchChange <= -spikeThreshold)
-    { 
+    {
       pitchChange = 0;
     }
 
     //run PID loops
     PitchPID();
-
   }
 }
 
@@ -619,10 +646,9 @@ void SDOutput()
 //keep track of iterations
 void timekeeper()
 {
-  timeInSeconds = millis()/1000.0;
+  timeInSeconds = millis() / 1000.0;
   SDiteration++; //to make sure SD card outputs at correct time
 }
-
 
 //VOID SETUP ====================================================================================
 
@@ -664,7 +690,11 @@ void loop()
 {
   mpu6050Input();
   timekeeper();
-  tailMovement();
+  PitchOutput = RCpitch;
+  tailMovementTailDroop10Deg();
+  Serial.print(rotatorServoOutput);
+  Serial.print("   ");
+  Serial.println(elevatorServoOutput);
   elevonWithTail();
 
   //write();
