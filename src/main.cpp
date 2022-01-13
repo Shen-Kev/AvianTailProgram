@@ -107,8 +107,10 @@ float tailElevonOffset = 0;      //variable to keep track of elevon offset cause
 float optimumRotatorServoOutput; //variable to keep track of optimum rotator servo position
 bool isOptimum = true;
 
-float elevatorDegreeToCreateZeroTailForce = 25; //15 degrees, whatever 15 degrees is for the servo, which is about 3/2 more
-float totalTailAngle;
+float forceToBalenceMAVInPitch = -15; //15 degrees, whatever 15 degrees is for the servo, which is about 3/2 more
+const float tailForceOffset = -15;// 15 degrees as well. So when tail is upright it will completely fufil force to balence MAVinpitch
+float pitchForce;
+float tailForce;
 const float deadZone = 5;
 
 //dampener values to scale servo outputs
@@ -334,13 +336,6 @@ void PitchPID()
   PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //pitch desired calculation
 
   PitchOutput = constrain(PitchOutput, -90, 90);
-  Serial.println(PitchOutput);
-}
-
-//radian function converts degrees to radians
-float radian(float input)
-{
-  return input * (3.1416 / 180);
 }
 
 //function to calculate tail movement
@@ -369,7 +364,7 @@ void tailMovement()
 
   if (isOptimum)
   {
-    elevatorServoOutput = 90 + (PitchOutput / (cos(radian(rotatorServoOutput - 90))));
+    elevatorServoOutput = 90 + (PitchOutput / (cos(radians(rotatorServoOutput - 90))));
     rotatorServoOutput = 180 - rotatorServoOutput;
     tailElevonOffset = 0;
   }
@@ -388,25 +383,64 @@ void tailMovement()
   rotatorServoOutput = constrain(rotatorServoOutput + rotatorServoOutputTrim, 0, 180);
 }
 
-void tailMovementTailDroop10Deg()
+//no worky
+void tailMovementTailDroop10DegNOPE()
 {
-  isOptimum = true;
+//   isOptimum = true;
   
-  if (PitchOutput > elevatorDegreeToCreateZeroTailForce - deadZone && PitchOutput < elevatorDegreeToCreateZeroTailForce + deadZone)
+//   if (PitchOutput > elevatorDegreeToCreateZeroTailForce - deadZone && PitchOutput < elevatorDegreeToCreateZeroTailForce + deadZone)
+//   {
+//     PitchOutput = elevatorDegreeToCreateZeroTailForce - deadZone; //pitch is set to pitch up just under the deadzone, to where yaw can be generated
+//     isOptimum = false;   //to log in data
+//   }
+
+
+
+
+
+//   //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA NOING WORKS
+
+//   // //actual tail force- note when tail force in pitch is 0 the MAV will pitch up, but when PitchOutput is 0 MAV should stay level
+//   pitchForce = PitchOutput - elevatorDegreeToCreateZeroTailForce;
+
+//   //figure out what angle to generate the correct yaw and pitch force
+
+
+//   rotatorServoOutput = degrees(asin(RCyaw / tailForce)); 
+  
+
+//   elevatorServoOutput = tailForce / (cos(radian(rotatorServoOutput)));
+
+  
+//   elevatorServoOutput = constrain(90 + elevatorServoOutput + elevatorServoOutputTrim, 0, 180);
+//   rotatorServoOutput = constrain(90 + rotatorServoOutput + rotatorServoOutputTrim, 0, 180);
+ }
+
+void tailMovementTailDroop10Deg() {
+  isOptimum = true;
+  if (PitchOutput > tailForceOffset - deadZone && PitchOutput < tailForceOffset + deadZone)
   {
-    PitchOutput = elevatorDegreeToCreateZeroTailForce - deadZone; //pitch is set to pitch up just under the deadzone, to where yaw can be generated
-    isOptimum = false;                                            //to log in data
+    PitchOutput = tailForceOffset - deadZone; //pitch is set to pitch up just under the deadzone, to where yaw can be generated
+    isOptimum = false;   //to log in data
   }
 
-  //actual tail force- note when tail force is 0 the MAV will pitch up, but when PitchOutput is 0 MAV should stay level
-  totalTailAngle = PitchOutput - elevatorDegreeToCreateZeroTailForce;
+  pitchForce = PitchOutput + forceToBalenceMAVInPitch;  
+  rotatorServoOutput = constrain(0 - degrees(atan(RCyaw/pitchForce)), -90, 90);
 
-  //figure out what angle to generate the correct yaw force
-  rotatorServoOutput = map(degrees(atan(RCyaw / totalTailAngle)), 90, -90, 180, 0);
-  elevatorServoOutput = 90 + ((PitchOutput / (cos(radian(rotatorServoOutput - 90)))));
 
-  elevatorServoOutput = constrain(elevatorServoOutput + elevatorServoOutputTrim, 0, 180);
-  rotatorServoOutput = constrain(rotatorServoOutput + rotatorServoOutputTrim, 45, 135);
+
+  if(rotatorServoOutput == 0) {
+    rotatorServoOutput = 0.01;
+  }
+
+
+  tailForce = pitchForce/cos(radians(rotatorServoOutput));
+
+
+  elevatorServoOutput = tailForce-tailForceOffset;
+
+  elevatorServoOutput = constrain(90 + elevatorServoOutput + elevatorServoOutputTrim, 0, 180);
+  rotatorServoOutput = constrain(90 + rotatorServoOutput + rotatorServoOutputTrim, 0, 180);
 }
 
 //function that mixes pitch and roll into elevon movmements
@@ -482,6 +516,10 @@ void SDSetup()
     file.print("\t");
 
     file.print("RCyaw");
+    file.print("\t");
+    file.print("pitchForce");
+    file.print("\t");
+    file.print("tailForce");
     file.print("\t");
     file.print("RCpitch");
     file.print("\t");
@@ -608,6 +646,10 @@ void SDOutput()
 
     file.print(RCyaw);
     file.print("\t");
+    file.print(pitchForce);
+    file.print("\t");
+    file.print(tailForce);
+    file.print("\t");
     file.print(RCpitch);
     file.print("\t");
     file.print(PitchOutput);
@@ -683,13 +725,8 @@ void loop()
 {
   mpu6050Input();
   timekeeper();
-  // PitchOutput = RCpitch;
+  PitchOutput = RCpitch;
   tailMovementTailDroop10Deg();
-  // Serial.print(rotatorServoOutput);
-  // Serial.print("   ");
-  // Serial.println(elevatorServoOutput);
-  elevonWithTail();
-
   write();
   SDOutput();
 }
