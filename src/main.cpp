@@ -456,6 +456,15 @@ void elevonWithTail()
   leftElevonServoOutput = constrain(leftElevonServoOutput + leftElevonServoOutputTrim, 0, 180);
 }
 
+void ailerons() {
+  rightElevonServoOutput = ((RCroll) / elevonDampener) + 90;
+  leftElevonServoOutput = ((RCroll) / elevonDampener) + 90;
+
+  rightElevonServoOutput = constrain(rightElevonServoOutput + rightElevonServoOutputTrim, 0, 180);
+  leftElevonServoOutput = constrain(leftElevonServoOutput + leftElevonServoOutputTrim, 0, 180);
+
+}
+
 //writes signal to actuators
 void write()
 {
@@ -608,6 +617,12 @@ void mpu6050Input()
 
     //run PID loops
     PitchPID();
+    //run logic 
+    PitchOutput = RCpitch;
+    tailMovementTailDroop10Deg();
+    ailerons();
+    //write to servos
+    write();
   }
 }
 
@@ -721,8 +736,5 @@ void loop()
 {
   mpu6050Input();
   timekeeper();
-  PitchOutput = RCpitch;
-  tailMovementTailDroop10Deg();
-  write();
   SDOutput();
 }
