@@ -107,14 +107,14 @@ float tailElevonOffset = 0;      //variable to keep track of elevon offset cause
 float optimumRotatorServoOutput; //variable to keep track of optimum rotator servo position
 bool isOptimum = true;
 
-float forceToBalenceMAVInPitch = -15; //15 degrees, whatever 15 degrees is for the servo, which is about 3/2 more
-const float tailForceOffset = -15;// 15 degrees as well. So when tail is upright it will completely fufil force to balence MAVinpitch
+float forceToBalenceMAVInPitch = -40; //15 degrees, whatever 15 degrees is for the servo, which is about 3/2 more
+const float tailForceOffset = -40;// 15 degrees as well. So when tail is upright it will completely fufil force to balence MAVinpitch
 float pitchForce;
 float tailForce;
-const float deadZone = 5;
+const float deadZone = 10;
 
 //dampener values to scale servo outputs
-float RCpitchDampener = 3;
+float elevatorDampener = 3;
 float elevonDampener = 2;
 float tailElevonOffsetDampener = 2;
 
@@ -285,7 +285,6 @@ void PWMSignalCalculator(float *channel, int pinNum, volatile int *lastInterrupt
 void PWMSignalCalculatorPitch()
 {
   PWMSignalCalculator(&RCpitch, RCpitchInputPin, &PWMLastInterruptTimePitch, &PWMTimerStartPitch);
-  RCpitch = RCpitch / RCpitchDampener;
 }
 void PWMSignalCalculatorYaw()
 {
@@ -377,7 +376,7 @@ void tailMovement()
     //pitch generated is tan(45 deg) times  yaw force, tan (45 deg) is 1, so pitch generated = RCyaw force generated.
     tailElevonOffset = (abs(PitchOutput) - abs(RCyaw)) / tailElevonOffsetDampener;
   }
-  elevatorServoOutput = ((elevatorServoOutput - 90) / RCpitchDampener) + 90;
+  elevatorServoOutput = ((elevatorServoOutput - 90) / elevatorDampener) + 90;
 
   elevatorServoOutput = constrain(elevatorServoOutput + elevatorServoOutputTrim, 0, 180);
   rotatorServoOutput = constrain(rotatorServoOutput + rotatorServoOutputTrim, 0, 180);
@@ -418,6 +417,7 @@ void tailMovementTailDroop10DegNOPE()
 
 void tailMovementTailDroop10Deg() {
   isOptimum = true;
+
   if (PitchOutput > tailForceOffset - deadZone && PitchOutput < tailForceOffset + deadZone)
   {
     PitchOutput = tailForceOffset - deadZone; //pitch is set to pitch up just under the deadzone, to where yaw can be generated
@@ -427,19 +427,15 @@ void tailMovementTailDroop10Deg() {
   pitchForce = PitchOutput + forceToBalenceMAVInPitch;  
   rotatorServoOutput = constrain(0 - degrees(atan(RCyaw/pitchForce)), -90, 90);
 
-
-
   if(rotatorServoOutput == 0) {
     rotatorServoOutput = 0.01;
   }
 
-
   tailForce = pitchForce/cos(radians(rotatorServoOutput));
-
 
   elevatorServoOutput = tailForce-tailForceOffset;
 
-  elevatorServoOutput = constrain(90 + elevatorServoOutput + elevatorServoOutputTrim, 0, 180);
+  elevatorServoOutput = constrain(90 + ((elevatorServoOutput + elevatorServoOutputTrim)/elevatorDampener), 0, 180);
   rotatorServoOutput = constrain(90 + rotatorServoOutput + rotatorServoOutputTrim, 0, 180);
 }
 
