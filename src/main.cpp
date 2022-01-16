@@ -107,8 +107,8 @@ float tailElevonOffset = 0;      //variable to keep track of elevon offset cause
 float optimumRotatorServoOutput; //variable to keep track of optimum rotator servo position
 bool isOptimum = true;
 
-float forceToBalenceMAVInPitch = -40; //15 degrees, whatever 15 degrees is for the servo, which is about 3/2 more
-const float tailForceOffset = -40;// 15 degrees as well. So when tail is upright it will completely fufil force to balence MAVinpitch
+float forceToBalenceMAVInPitch = -60; //15 degrees, whatever 15 degrees is for the servo, which is about 3/2 more
+const float tailForceOffset = -60;    // 15 degrees as well. So when tail is upright it will completely fufil force to balence MAVinpitch
 float pitchForce;
 float tailForce;
 const float deadZone = 10;
@@ -385,57 +385,52 @@ void tailMovement()
 //no worky
 void tailMovementTailDroop10DegNOPE()
 {
-//   isOptimum = true;
-  
-//   if (PitchOutput > elevatorDegreeToCreateZeroTailForce - deadZone && PitchOutput < elevatorDegreeToCreateZeroTailForce + deadZone)
-//   {
-//     PitchOutput = elevatorDegreeToCreateZeroTailForce - deadZone; //pitch is set to pitch up just under the deadzone, to where yaw can be generated
-//     isOptimum = false;   //to log in data
-//   }
+  //   isOptimum = true;
 
+  //   if (PitchOutput > elevatorDegreeToCreateZeroTailForce - deadZone && PitchOutput < elevatorDegreeToCreateZeroTailForce + deadZone)
+  //   {
+  //     PitchOutput = elevatorDegreeToCreateZeroTailForce - deadZone; //pitch is set to pitch up just under the deadzone, to where yaw can be generated
+  //     isOptimum = false;   //to log in data
+  //   }
 
+  //   //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA NOING WORKS
 
+  //   // //actual tail force- note when tail force in pitch is 0 the MAV will pitch up, but when PitchOutput is 0 MAV should stay level
+  //   pitchForce = PitchOutput - elevatorDegreeToCreateZeroTailForce;
 
+  //   //figure out what angle to generate the correct yaw and pitch force
 
-//   //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA NOING WORKS
+  //   rotatorServoOutput = degrees(asin(RCyaw / tailForce));
 
-//   // //actual tail force- note when tail force in pitch is 0 the MAV will pitch up, but when PitchOutput is 0 MAV should stay level
-//   pitchForce = PitchOutput - elevatorDegreeToCreateZeroTailForce;
+  //   elevatorServoOutput = tailForce / (cos(radian(rotatorServoOutput)));
 
-//   //figure out what angle to generate the correct yaw and pitch force
+  //   elevatorServoOutput = constrain(90 + elevatorServoOutput + elevatorServoOutputTrim, 0, 180);
+  //   rotatorServoOutput = constrain(90 + rotatorServoOutput + rotatorServoOutputTrim, 0, 180);
+}
 
-
-//   rotatorServoOutput = degrees(asin(RCyaw / tailForce)); 
-  
-
-//   elevatorServoOutput = tailForce / (cos(radian(rotatorServoOutput)));
-
-  
-//   elevatorServoOutput = constrain(90 + elevatorServoOutput + elevatorServoOutputTrim, 0, 180);
-//   rotatorServoOutput = constrain(90 + rotatorServoOutput + rotatorServoOutputTrim, 0, 180);
- }
-
-void tailMovementTailDroop10Deg() {
+void tailMovementTailDroop10Deg()
+{
   isOptimum = true;
 
-  if (PitchOutput > tailForceOffset - deadZone && PitchOutput < tailForceOffset + deadZone)
+  if (PitchOutput > -tailForceOffset - deadZone && PitchOutput < -tailForceOffset + deadZone)
   {
-    PitchOutput = tailForceOffset - deadZone; //pitch is set to pitch up just under the deadzone, to where yaw can be generated
-    isOptimum = false;   //to log in data
+    PitchOutput = -tailForceOffset - deadZone; //pitch is set to pitch up just under the deadzone, to where yaw can be generated
+    isOptimum = false;                        //to log in data
   }
 
-  pitchForce = PitchOutput + forceToBalenceMAVInPitch;  
-  rotatorServoOutput = constrain(0 - degrees(atan(RCyaw/pitchForce)), -90, 90);
+  pitchForce = PitchOutput + forceToBalenceMAVInPitch;
+  rotatorServoOutput = constrain(0 - degrees(atan(RCyaw / pitchForce)), -90, 90);
 
-  if(rotatorServoOutput == 0) {
+  if (rotatorServoOutput == 0)
+  {
     rotatorServoOutput = 0.01;
   }
 
-  tailForce = pitchForce/cos(radians(rotatorServoOutput));
+  tailForce = pitchForce / cos(radians(rotatorServoOutput));
 
-  elevatorServoOutput = tailForce-tailForceOffset;
+  elevatorServoOutput = tailForce - tailForceOffset;
 
-  elevatorServoOutput = constrain(90 + ((elevatorServoOutput + elevatorServoOutputTrim)/elevatorDampener), 0, 180);
+  elevatorServoOutput = constrain(90 + ((elevatorServoOutput + elevatorServoOutputTrim) / elevatorDampener), 0, 180);
   rotatorServoOutput = constrain(90 + rotatorServoOutput + rotatorServoOutputTrim, 0, 180);
 }
 
@@ -456,13 +451,13 @@ void elevonWithTail()
   leftElevonServoOutput = constrain(leftElevonServoOutput + leftElevonServoOutputTrim, 0, 180);
 }
 
-void ailerons() {
+void ailerons()
+{
   rightElevonServoOutput = ((RCroll) / elevonDampener) + 90;
   leftElevonServoOutput = ((RCroll) / elevonDampener) + 90;
 
   rightElevonServoOutput = constrain(rightElevonServoOutput + rightElevonServoOutputTrim, 0, 180);
   leftElevonServoOutput = constrain(leftElevonServoOutput + leftElevonServoOutputTrim, 0, 180);
-
 }
 
 //writes signal to actuators
@@ -617,7 +612,7 @@ void mpu6050Input()
 
     //run PID loops
     PitchPID();
-    //run logic 
+    //run logic
     PitchOutput = RCpitch;
     tailMovementTailDroop10Deg();
     ailerons();
