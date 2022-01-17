@@ -135,22 +135,30 @@ float spikeThreshold = 360; //deg/sec
 
 //PID controller variables
 
-float PitchPgain = 0.5;
-float PitchIgain = 0.02;
-float PitchDgain = 0;
+float PitchPgain = 3.0;
+float PitchIgain = 0;
+float PitchDgain = 0.5;
 
+float RCpitchScalar = 2.0;
 float PitchProportional;
 float PitchIntegral;
 float PitchDerivative;
 float PitchError;
+float PrevPitchError;
+float AvgPitchErrorSum;
+float AvgPitchError;
+float AvgPrevPitchErrorSum;
+float AvgPrevPitchError;
+float PitchErrorArray [20];
+float PitchDerivativeConstrain = 45;
 
 float PitchOutput;
 
-float PrevPitchError;
 float pitchChange;                       //degrees per second
 float PitchIntegralSaturationLimit = 45; //servo position offset of 90 degrees
 
 float timeBetweenIMUInputs;
+float timeBetweenAveragePitchError;
 
 // MPU6050 CODE- UNORIGINAL CODE ================================================================
 
@@ -310,31 +318,54 @@ void PWMSignalCalculatorMODE()
 
 //PI Control Loop for pitch
 void PitchPID()
-{
-
-  PrevPitchError = PitchError;
-  PitchError = RCpitch - pitchChange; //setpoint error
-
-  PitchProportional = PitchError * PitchPgain; //proportional value
-
-  if (PitchIntegral < -PitchIntegralSaturationLimit) //prevent windup
+{  
+  //pitchErrorArray
+  for (int i = 0; i < 19; i++)
   {
-    PitchIntegral = -PitchIntegralSaturationLimit;
+    PitchErrorArray[i] = PitchErrorArray[i+1];
   }
-  else if (PitchIntegral > PitchIntegralSaturationLimit)
-  {
-    PitchIntegral = PitchIntegralSaturationLimit;
-  }
-  else
-  {
-    PitchIntegral += PitchError * PitchIgain; //discrete integration
-  }
+  PitchErrorArray[19] = (RCpitch/RCpitchScalar) - pitch;
 
-  PitchDerivative = 0; //(PitchError - PrevPitchError) * PitchDgain; //discrete derivative
+  //find average previous pitch error
+  for(int i = 0; i < 10; i++) {
+    AvgPrevPitchErrorSum += PitchErrorArray[i];
+  }
+  AvgPrevPitchError = AvgPrevPitchErrorSum/10;
+  AvgPrevPitchErrorSum = 0;
 
+  for(int i = 10; i < 20; i++) {
+    AvgPitchErrorSum += PitchErrorArray[i];
+    AvgPitchError = AvgPitchErrorSum/10;
+  }
+  AvgPitchError = AvgPitchErrorSum/10;
+  AvgPitchErrorSum = 0;
+  
+  timeBetweenAveragePitchError = timeBetweenIMUInputs*10;
+  
+  //PitchError = RCpitch - pitch; //setpoint error
+
+  PitchProportional = AvgPitchError * PitchPgain; //proportional value
+
+  // if (PitchIntegral < -PitchIntegralSaturationLimit) //prevent windup
+  // {
+  //   PitchIntegral = -PitchIntegralSaturationLimit;
+  // }
+  // else if (PitchIntegral > PitchIntegralSaturationLimit)
+  // {
+  //   PitchIntegral = PitchIntegralSaturationLimit;
+  // }
+  // else
+  // {
+  //   PitchIntegral += PitchError * PitchIgain; //discrete integration
+  // }
+  PitchIntegral = 0;
+
+  PitchDerivative = (AvgPitchError - AvgPrevPitchError)/timeBetweenAveragePitchError * PitchDgain; //dx/dt discrete derivative
+  PitchDerivative = constrain(PitchDerivative, -PitchDerivativeConstrain, PitchDerivativeConstrain);
   PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //pitch desired calculation
 
   PitchOutput = constrain(PitchOutput, -90, 90);
+  Serial.println(PitchOutput);
 }
 
 //function to calculate tail movement
@@ -598,7 +629,7 @@ void mpu6050Input()
     }
     yaw = 0 - yaw;
     yawChange = (yaw - prevYaw) / timeBetweenIMUInputs; //dx/dt (discrete derivative)
-    pitchChange = (pitch - PrevPitchError) / timeBetweenIMUInputs;
+    //pitchChange = (pitch - PrevPitchError) / timeBetweenIMUInputs;
 
     if (yawChange >= spikeThreshold || yawChange <= -spikeThreshold)
     {
@@ -613,7 +644,7 @@ void mpu6050Input()
     //run PID loops
     PitchPID();
     //run logic
-    PitchOutput = RCpitch;
+    //PitchOutput = RCpitch;
     tailMovementTailDroop10Deg();
     ailerons();
     //write to servos
