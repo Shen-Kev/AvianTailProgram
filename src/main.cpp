@@ -94,20 +94,24 @@ int leftElevonServoPin = SERVO4PIN;
 float RCpitch;
 float RCyaw;
 float RCroll;
-float MODE;
+float DataLog;
+bool dataLog = false;
+float MODE;  
+bool mode = false;//toggles PID on and off
 
 //define reciever pins
 int RCpitchInputPin = RX3;
 int RCyawInputPin = RX2;
 int RCrollInputPin = RX4;
-int MODEInputPin = RX1;
+int DataLogInputPin = RX1;
+int MODEInputPin = RX5;
 
 //initialize tail variables
 float tailElevonOffset = 0;      //variable to keep track of elevon offset caused by the tail
 float optimumRotatorServoOutput; //variable to keep track of optimum rotator servo position
-bool isOptimum = true;
+bool inDeadzone = true;
 
-float forceToBalenceMAVInPitch = -60; //15 degrees, whatever 15 degrees is for the servo, which is about 3/2 more
+const float forceToBalenceMAVInPitch = -60; //15 degrees, whatever 15 degrees is for the servo, which is about 3/2 more
 const float tailForceOffset = -60;    // 15 degrees as well. So when tail is upright it will completely fufil force to balence MAVinpitch
 float pitchForce;
 float tailForce;
@@ -123,7 +127,6 @@ float timeInSeconds;
 float previousIMUTimeInSeconds;
 int SDiteration = 0;
 int SDdataLogFrequency = 200;
-bool dataLog = false;
 
 //initialize attitude variables
 float yaw = 0;
@@ -263,6 +266,9 @@ volatile int PWMLastInterruptTimeYaw;
 volatile unsigned long PWMTimerStartRoll;
 volatile int PWMLastInterruptTimeRoll;
 
+volatile unsigned long PWMTimerStartDataLog;
+volatile int PWMLastInterruptTimeDataLog;
+
 volatile unsigned long PWMTimerStartMODE;
 volatile int PWMLastInterruptTimeMODE;
 
@@ -302,11 +308,11 @@ void PWMSignalCalculatorRoll()
 {
   PWMSignalCalculator(&RCroll, RCrollInputPin, &PWMLastInterruptTimeRoll, &PWMTimerStartRoll);
 }
-void PWMSignalCalculatorMODE()
+void PWMSignalCalculatorDataLog()
 {
-  PWMSignalCalculator(&MODE, MODEInputPin, &PWMLastInterruptTimeMODE, &PWMTimerStartMODE);
-  //mode used for datalog, chagned to 0 and 1 in this function
-  if (MODE < 0)
+  PWMSignalCalculator(&DataLog, DataLogInputPin, &PWMLastInterruptTimeDataLog, &PWMTimerStartDataLog);
+  //datalog, chagned to 0 and 1 in this function
+  if (DataLog < 0)
   {
     dataLog = true;
   }
@@ -315,8 +321,21 @@ void PWMSignalCalculatorMODE()
     dataLog = false;
   }
 }
+void PWMSignalCalculatorMODE()
+{
+  PWMSignalCalculator(&MODE, MODEInputPin, &PWMLastInterruptTimeMODE, &PWMTimerStartMODE);
+  //mode used for PID on or off
+  if (MODE < 0)
+  {
+    mode = true;
+  }
+  else
+  {
+    mode = false;
+  }
+}
 
-//PI Control Loop for pitch
+//PD Control Loop for pitch
 void PitchPID()
 {  
   //pitchErrorArray
@@ -365,7 +384,11 @@ void PitchPID()
   PitchOutput = PitchProportional + PitchIntegral + PitchDerivative; //pitch desired calculation
 
   PitchOutput = constrain(PitchOutput, -90, 90);
-  Serial.println(PitchOutput);
+
+  if(mode == 0) {
+    PitchOutput = RCpitch;
+  }
+
 }
 
 //function to calculate tail movement
@@ -381,18 +404,18 @@ void tailMovement()
   {
     optimumRotatorServoOutput = 90;
   }
-  isOptimum = true;
+  inDeadzone = true;
   if (optimumRotatorServoOutput < 45)
   {
-    isOptimum = false;
+    inDeadzone = false;
   }
   else if (optimumRotatorServoOutput > 135)
   {
-    isOptimum = false;
+    inDeadzone = false;
   }
   rotatorServoOutput = constrain(optimumRotatorServoOutput, 45, 135);
 
-  if (isOptimum)
+  if (inDeadzone)
   {
     elevatorServoOutput = 90 + (PitchOutput / (cos(radians(rotatorServoOutput - 90))));
     rotatorServoOutput = 180 - rotatorServoOutput;
@@ -416,12 +439,12 @@ void tailMovement()
 //no worky
 void tailMovementTailDroop10DegNOPE()
 {
-  //   isOptimum = true;
+  //   inDeadzone = true;
 
   //   if (PitchOutput > elevatorDegreeToCreateZeroTailForce - deadZone && PitchOutput < elevatorDegreeToCreateZeroTailForce + deadZone)
   //   {
   //     PitchOutput = elevatorDegreeToCreateZeroTailForce - deadZone; //pitch is set to pitch up just under the deadzone, to where yaw can be generated
-  //     isOptimum = false;   //to log in data
+  //     inDeadzone = false;   //to log in data
   //   }
 
   //   //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA NOING WORKS
@@ -441,12 +464,14 @@ void tailMovementTailDroop10DegNOPE()
 
 void tailMovementTailDroop10Deg()
 {
-  isOptimum = true;
 
-  if (PitchOutput > -tailForceOffset - deadZone && PitchOutput < -tailForceOffset + deadZone)
+
+  inDeadzone = false;
+
+  if (PitchOutput > -tailForceOffset - deadZone && PitchOutput < -tailForceOffset + deadZone && (rotatorServoOutput < -deadZone || rotatorServoOutput > deadZone))
   {
     PitchOutput = -tailForceOffset - deadZone; //pitch is set to pitch up just under the deadzone, to where yaw can be generated
-    isOptimum = false;                        //to log in data
+    inDeadzone = true;                        //to log data
   }
 
   pitchForce = PitchOutput + forceToBalenceMAVInPitch;
@@ -561,8 +586,10 @@ void SDSetup()
 
     file.print("dataLog");
     file.print("\t");
+    file.print("MODE");
+    file.print("\t");
 
-    file.print("isOptimum");
+    file.print("inDeadzone");
     file.print("\t");
 
     file.print("elevatorServoOutput");
@@ -696,8 +723,10 @@ void SDOutput()
 
     file.print(dataLog * 100);
     file.print("\t");
+    file.print(MODE * 100);
+    file.print("\t");
 
-    file.print(isOptimum * 100);
+    file.print(inDeadzone * 100);
     file.print("\t");
 
     file.print(elevatorServoOutput);
@@ -731,6 +760,7 @@ void setup()
   pinMode(RCpitchInputPin, INPUT);
   pinMode(RCyawInputPin, INPUT);
   pinMode(RCrollInputPin, INPUT);
+  pinMode(DataLogInputPin, INPUT);
   pinMode(MODEInputPin, INPUT);
 
   pinMode(elevatorServoPin, OUTPUT);
@@ -741,10 +771,12 @@ void setup()
   PWMTimerStartPitch = 0;
   PWMTimerStartRoll = 0;
   PWMTimerStartYaw = 0;
+  PWMTimerStartDataLog = 0;
   PWMTimerStartMODE = 0;
   attachInterrupt(digitalPinToInterrupt(RCpitchInputPin), PWMSignalCalculatorPitch, CHANGE);
   attachInterrupt(digitalPinToInterrupt(RCrollInputPin), PWMSignalCalculatorRoll, CHANGE);
   attachInterrupt(digitalPinToInterrupt(RCyawInputPin), PWMSignalCalculatorYaw, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(DataLogInputPin), PWMSignalCalculatorDataLog, CHANGE);
   attachInterrupt(digitalPinToInterrupt(MODEInputPin), PWMSignalCalculatorMODE, CHANGE);
 
   elevatorServo.attach(elevatorServoPin);
@@ -763,4 +795,5 @@ void loop()
   mpu6050Input();
   timekeeper();
   SDOutput();
+  Serial.println(mode);
 }
