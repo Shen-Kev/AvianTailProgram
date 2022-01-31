@@ -161,13 +161,12 @@ float PitchDerivativeConstrain = 45;
 
 float PitchOutput;
 
-
 //Yaw PID controller variables
- 
+
 float YawPgain = 4.0;
 float YawIgain = 0;
 float YawDgain = 0.0;
- 
+
 float RCYawScalar = 2.0;
 float YawProportional;
 float YawIntegral;
@@ -181,10 +180,8 @@ float AvgPrevYawErrorSum;
 float AvgPrevYawError;
 float YawErrorArray[ArrayLength];
 float YawDerivativeConstrain = 45;
- 
-float YawOutput;
- 
 
+float YawOutput;
 
 // MPU6050 CODE- UNORIGINAL CODE ================================================================
 
@@ -366,34 +363,34 @@ void PWMSignalCalculatorMODE()
 void PitchPID()
 {
   //pitchErrorArray keeps track of past 20 pitch error values to average from
-  for (int i = 0; i < ArrayLength-1; i++)
+  for (int i = 0; i < ArrayLength - 1; i++)
   {
     PitchErrorArray[i] = PitchErrorArray[i + 1]; //moving everything down one index
   }
 
   PitchError = (RCpitch / RCpitchScalar) - pitch + pitchToCreateLift;
 
-  PitchErrorArray[ArrayLength-1] = PitchError; //setting "latest" pitch error
+  PitchErrorArray[ArrayLength - 1] = PitchError; //setting "latest" pitch error
 
   //find average previous pitch error
-  for (int i = 0; i < ArrayLength/2; i++)
+  for (int i = 0; i < ArrayLength / 2; i++)
   {
     AvgPrevPitchErrorSum += PitchErrorArray[i];
   }
-  AvgPrevPitchError = AvgPrevPitchErrorSum / (ArrayLength/2);
+  AvgPrevPitchError = AvgPrevPitchErrorSum / (ArrayLength / 2);
   AvgPrevPitchErrorSum = 0;
 
   //find average pitch error
-  for (int i = (ArrayLength/2); i < ArrayLength; i++)
+  for (int i = (ArrayLength / 2); i < ArrayLength; i++)
   {
     AvgPitchErrorSum += PitchErrorArray[i];
-    AvgPitchError = AvgPitchErrorSum / (ArrayLength/2);
+    AvgPitchError = AvgPitchErrorSum / (ArrayLength / 2);
   }
-  AvgPitchError = AvgPitchErrorSum / (ArrayLength/2);
+  AvgPitchError = AvgPitchErrorSum / (ArrayLength / 2);
   AvgPitchErrorSum = 0;
 
   //setting time change to be the difference between start of pitch error average and past pitch error average
-  timeBetweenAveragePitchError = timeBetweenIMUInputs * (ArrayLength/2); //10 iterations apart
+  timeBetweenAveragePitchError = timeBetweenIMUInputs * (ArrayLength / 2); //10 iterations apart
 
   PitchProportional = AvgPitchError * PitchPgain; //proportional value
 
@@ -424,46 +421,41 @@ void PitchPID()
   }
 }
 
-
-
-
-
- 
 //PID Control Loop for Yaw
 void YawPID()
 {
   //YawErrorArray keeps track of past 20 Yaw error values to average from
-  for (int i = 0; i < ArrayLength-1; i++)
+  for (int i = 0; i < ArrayLength - 1; i++)
   {
     YawErrorArray[i] = YawErrorArray[i + 1]; //moving everything down one index
   }
- 
+
   YawError = (RCyaw / RCYawScalar) - yawChange;
- 
-  YawErrorArray[ArrayLength-1] = YawError; //setting "latest" Yaw error
- 
+
+  YawErrorArray[ArrayLength - 1] = YawError; //setting "latest" Yaw error
+
   //find average previous Yaw error
-  for (int i = 0; i < ArrayLength/2; i++)
+  for (int i = 0; i < ArrayLength / 2; i++)
   {
     AvgPrevYawErrorSum += YawErrorArray[i];
   }
-  AvgPrevYawError = AvgPrevYawErrorSum / (ArrayLength/2);
+  AvgPrevYawError = AvgPrevYawErrorSum / (ArrayLength / 2);
   AvgPrevYawErrorSum = 0;
- 
+
   //find average Yaw error
-  for (int i = (ArrayLength/2); i < ArrayLength; i++)
+  for (int i = (ArrayLength / 2); i < ArrayLength; i++)
   {
     AvgYawErrorSum += YawErrorArray[i];
-    AvgYawError = AvgYawErrorSum / (ArrayLength/2);
+    AvgYawError = AvgYawErrorSum / (ArrayLength / 2);
   }
-  AvgYawError = AvgYawErrorSum / (ArrayLength/2);
+  AvgYawError = AvgYawErrorSum / (ArrayLength / 2);
   AvgYawErrorSum = 0;
- 
+
   //setting time change to be the difference between start of Yaw error average and past Yaw error average
-  timeBetweenAverageYawError = timeBetweenIMUInputs * (ArrayLength/2); //10 iterations apart
- 
+  timeBetweenAverageYawError = timeBetweenIMUInputs * (ArrayLength / 2); //10 iterations apart
+
   YawProportional = AvgYawError * YawPgain; //proportional value
- 
+
   // if (YawIntegral < -YawIntegralSaturationLimit) //prevent windup
   // {
   //   YawIntegral = -YawIntegralSaturationLimit;
@@ -476,25 +468,22 @@ void YawPID()
   // {
   //   YawIntegral += YawError * YawIgain; //discrete integration
   // }
- 
+
   YawIntegral = 0;
- 
-  YawDerivative = (AvgYawError - AvgPrevYawError) / timeBetweenAverageYawError * YawDgain; //dx/dt discrete derivative
+
+  YawDerivative = (AvgYawError - AvgPrevYawError) / timeBetweenAverageYawError * YawDgain;   //dx/dt discrete derivative
   YawDerivative = constrain(YawDerivative, -YawDerivativeConstrain, YawDerivativeConstrain); //constrain derviative (to avoid large spikes)
   YawOutput = YawProportional + YawIntegral + YawDerivative;                                 //Yaw desired calculation
- 
+
   YawOutput = constrain(YawOutput, -90, 90);
- 
+
   if (mode == 0)
   { //toggling PID loop on and off
     YawOutput = RCyaw;
-    
   }
 }
 
-
-
-
+//tail movement calculations
 void tailMovement()
 {
   inDeadzone = false;
@@ -505,7 +494,7 @@ void tailMovement()
     inDeadzone = true;                         //to log data
   }
 
-  pitchForce = PitchOutput + forceToBalenceMAVInPitch;                            //calculate force needed in pitch
+  pitchForce = PitchOutput + forceToBalenceMAVInPitch;                                //calculate force needed in pitch
   rotatorServoOutput = constrain(0 - degrees(atan(YawOutput / pitchForce)), -90, 90); //calculate rotation of tail
 
   if (rotatorServoOutput == 0)
@@ -732,7 +721,7 @@ void SDOutput()
     file.print("\t");
     file.print(PitchDerivative);
     file.print("\t");
-    
+
     file.print(YawError);
     file.print("\t");
     file.print(YawProportional);
