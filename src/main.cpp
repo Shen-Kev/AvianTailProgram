@@ -14,28 +14,28 @@
 //7: unplug SD card from MAV
 //8: plug in SD card to computer
 
-//Credits
-
-//Parts of code structure inspried by Nicholas Rehm
-//Github: https://github.com/nickrehm/dRehmFlight
-
-/*
+/* Credits
+ * 
+ * Parts of code structure inspried by Nicholas Rehm
+ * Github: https://github.com/nickrehm/dRehmFlight
+ *
  * Nicholas Rehm
  * Department of Aerospace Engineering
  * University of Maryland
  * College Park 20742
  * Email: nrehm@umd.edu
+ *
+ *
+ * Used MPU6050 Library and I2Cdev by Jeff Rowberg <jeff@rowberg.net>
+ * https://github.com/jrowberg/i2cdevlib
+ *
+ * Used standard Arduino SD Library
+ * https://www.arduino.cc/en/reference/SD
+ *
+ * PWM signal code structure inspired by
+ * https://www.camelsoftware.com/2015/12/25/reading-pwm-signals-from-an-rc-receiver-with-arduino/
+ *
  */
-
-//Used MPU6050 Library and I2Cdev by Jeff Rowberg <jeff@rowberg.net>
-//https://github.com/jrowberg/i2cdevlib
-
-//Used standard Arduino SD Library
-//https://www.arduino.cc/en/reference/SD
-
-//PWM signal code structure inspired by
-//https://www.camelsoftware.com/2015/12/25/reading-pwm-signals-from-an-rc-receiver-with-arduino/
-
 //libraries
 #include <Arduino.h>
 #include <Servo.h>
