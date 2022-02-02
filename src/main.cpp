@@ -108,6 +108,7 @@ const int MODEInputPin = RX5;
 //initialize tail variables
 bool inDeadzone = true;
 const float deadZone = 10;
+const float YawDeadzone = 10;
 const float forceToBalenceMAVInPitch = -60; //15 degrees, whatever 15 degrees is for the servo
 const float tailForceOffset = -60;          // 15 degrees as well. So when tail is upright it will completely fufil force to balence MAVinpitch
 float pitchForce;
@@ -140,6 +141,8 @@ float pitchToCreateLift = 10;
 //Pitch PID controller variables
 const int ArrayLength = 20;
 
+const bool PitchPIDOn = false;
+
 float PitchPgain = 3.0;
 float PitchIgain = 0;
 float PitchDgain = 0.5;
@@ -167,7 +170,7 @@ float YawPgain = 4.0;
 float YawIgain = 0;
 float YawDgain = 0.0;
 
-float RCYawScalar = 2.0;
+float RCYawScalar = 0.5;
 float YawProportional;
 float YawIntegral;
 float YawIntegralSaturationLimit = 45;
@@ -431,6 +434,10 @@ void YawPID()
   }
 
   YawError = (RCyaw / RCYawScalar) - yawChange;
+  //yaw deadzone to avoid jittering during level flight
+  if (YawError < YawDeadzone && YawError > -YawDeadzone) {
+    YawError = 0;
+  }
 
   YawErrorArray[ArrayLength - 1] = YawError; //setting "latest" Yaw error
 
@@ -683,7 +690,9 @@ void mpu6050Input()
     }
 
     //run PID loops
-    PitchPID();
+    if(PitchPIDOn) {
+      PitchPID();
+    }
     YawPID();
     //run logic
     tailMovement();
