@@ -693,6 +693,9 @@ void mpu6050Input()
     if(PitchPIDOn) {
       PitchPID();
     }
+    else{
+      PitchOutput = RCpitch;
+    }
     YawPID();
     //run logic
     tailMovement();
