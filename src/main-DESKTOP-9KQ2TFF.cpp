@@ -136,7 +136,7 @@ float pitchChange = 0; //deg/sec
 float pitch = 0;
 float roll = 0;
 float spikeThreshold = 360; //deg/sec
-float pitchToCreateLift = 15;
+float pitchToCreateLift = 10;
 
 //Pitch PID controller variables
 const int ArrayLength = 20;
@@ -145,7 +145,7 @@ const bool PitchPIDOn = true;
 
 float PitchPgain = 3.0;
 float PitchIgain = 0;
-float PitchDgain = 0.0;
+float PitchDgain = 0.5;
 
 float RCpitchScalar = 2.0;
 float PitchProportional;
@@ -170,7 +170,7 @@ float YawPgain = 4.0;
 float YawIgain = 0;
 float YawDgain = 0.0;
 
-const bool YawPIDOn = false;
+//const bool YawPIDOn = true;
 
 float RCYawScalar = 0.5;
 float YawProportional;
@@ -486,10 +486,10 @@ void YawPID()
 
   YawOutput = constrain(YawOutput, -90, 90);
 
-  if (mode == 0)
-  { //toggling PID loop on and off
-    YawOutput = RCyaw;
-  }
+  // if (mode == 0)
+  // { //toggling PID loop on and off
+  //   YawOutput = RCyaw;
+  // }
 }
 
 //tail movement calculations
@@ -674,12 +674,8 @@ void mpu6050Input()
     {
       roll = 180 + roll;
     }
-    else if (roll >= 0)
-    {
-      roll = roll - 180;
-    }
-    yaw = 0 - yaw;
-    yawChange = (yaw - prevYaw) / timeBetweenIMUInputs; //dx/dt (discrete derivative)
+
+    yawChange = (prevYaw-yaw)/timeBetweenIMUInputs;
 
     if (yawChange >= spikeThreshold || yawChange <= -spikeThreshold)
     {
@@ -698,12 +694,9 @@ void mpu6050Input()
     else{
       PitchOutput = RCpitch;
     }
-    if(YawPIDOn) {
-      YawPID();
-    }
-    else {
-      YawOutput = RCyaw;
-    }
+    Serial.println(yawChange);
+    YawPID();
+    
     //run logic
     tailMovement();
     ailerons();
