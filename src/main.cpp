@@ -141,11 +141,11 @@ float pitchToCreateLift = 15;
 //Pitch PID controller variables
 //const int ArrayLength = 20;
 
-const bool PitchPIDOn = true;
+#define PITCH_PID_ON true
 
 float PitchPgain = 3.0;
 float PitchIgain = 0;
-float PitchDgain = 0.0;
+float PitchDgain = 0.2;
 
 float RCpitchScalar = 2.0;
 float PitchProportional;
@@ -170,7 +170,7 @@ float YawPgain = 4.0;
 float YawIgain = 0;
 float YawDgain = 0.0;
 
-const bool YawPIDOn = true;
+#define YAW_PID_ON false
 
 float RCYawScalar = 0.5;
 float YawProportional;
@@ -373,7 +373,6 @@ void PitchPID()
   //   PitchErrorArray[i] = PitchErrorArray[i + 1]; //moving everything down one index
   // }
 
-
   PrevPitchError = PitchError;
   PitchError = (RCpitch / RCpitchScalar) - pitch + pitchToCreateLift;
 
@@ -416,7 +415,7 @@ void PitchPID()
 
   PitchIntegral = 0;
 
-  PitchDerivative = (PitchError - PrevPitchError) / timeBetweenIMUInputs * PitchDgain; //dx/dt discrete derivative
+  PitchDerivative = ((PitchError - PrevPitchError) / timeBetweenIMUInputs) * PitchDgain;             //dx/dt discrete derivative
   PitchDerivative = constrain(PitchDerivative, -PitchDerivativeConstrain, PitchDerivativeConstrain); //constrain derviative (to avoid large spikes)
   PitchOutput = PitchProportional + PitchIntegral + PitchDerivative;                                 //pitch desired calculation
 
@@ -440,7 +439,8 @@ void YawPID()
   PrevYawError = YawError;
   YawError = (RCyaw / RCYawScalar) - yawChange;
   //yaw deadzone to avoid jittering during level flight
-  if (YawError < YawDeadzone && YawError > -YawDeadzone) {
+  if (YawError < YawDeadzone && YawError > -YawDeadzone)
+  {
     YawError = 0;
   }
 
@@ -470,7 +470,7 @@ void YawPID()
 
   YawIntegral = 0;
 
-  YawDerivative = (YawError - PrevYawError) / timeBetweenIMUInputs * YawDgain;   //dx/dt discrete derivative
+  YawDerivative = (YawError - PrevYawError) / timeBetweenIMUInputs * YawDgain;               //dx/dt discrete derivative
   YawDerivative = constrain(YawDerivative, -YawDerivativeConstrain, YawDerivativeConstrain); //constrain derviative (to avoid large spikes)
   YawOutput = YawProportional + YawIntegral + YawDerivative;                                 //Yaw desired calculation
 
@@ -671,7 +671,6 @@ void mpu6050Input()
     yaw = 0 - yaw;
     yawChange = (yaw - prevYaw) / timeBetweenIMUInputs; //dx/dt (discrete derivative)(IMU inputs about every 0.01 seconds)
 
-
     if (yawChange >= spikeThreshold || yawChange <= -spikeThreshold)
     {
       yawChange = 0;
@@ -681,29 +680,24 @@ void mpu6050Input()
     {
       pitchChange = 0;
     }
-    
-    
-    Serial.println(pitch);
 
     //run PID loops
-    if(PitchPIDOn) {
+    #if PITCH_PID_ON
       PitchPID();
-    }
-    else{
+    #else
       PitchOutput = RCpitch;
-    }
-    if(YawPIDOn) {
+    #endif
+
+    #if YAW_PID_ON
       YawPID();
-    }
-    else {
+    #else
       YawOutput = RCyaw;
-    }
+    #endif
     //run logic
     tailMovement();
     ailerons();
     //write to servos
     write();
-
   }
 }
 
