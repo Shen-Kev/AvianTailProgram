@@ -465,19 +465,6 @@ void YawPID()
 
   YawProportional = AvgYawError * YawPgain; //proportional value
 
-  // if (YawIntegral < -YawIntegralSaturationLimit) //prevent windup
-  // {
-  //   YawIntegral = -YawIntegralSaturationLimit;
-  // }
-  // else if (YawIntegral > YawIntegralSaturationLimit)
-  // {
-  //   YawIntegral = YawIntegralSaturationLimit;
-  // }
-  // else
-  // {
-  //   YawIntegral += YawError * YawIgain; //discrete integration
-  // }
-
   YawIntegral = 0;
 
   YawDerivative = (AvgYawError - AvgPrevYawError) / timeBetweenAverageYawError * YawDgain;   //dx/dt discrete derivative
