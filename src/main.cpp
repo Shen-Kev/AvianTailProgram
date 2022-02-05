@@ -170,7 +170,7 @@ float YawPgain = 4.0;
 float YawIgain = 0;
 float YawDgain = 0.0;
 
-const bool YawPIDOn = false;
+const bool YawPIDOn = true;
 
 float RCYawScalar = 0.5;
 float YawProportional;
@@ -674,13 +674,6 @@ void mpu6050Input()
     {
       roll = 180 + roll;
     }
-    else if (roll >= 0)
-    {
-      roll = roll - 180;
-    }
-    yaw = 0 - yaw;
-    yawChange = (yaw - prevYaw) / timeBetweenIMUInputs; //dx/dt (discrete derivative)
-
     if (yawChange >= spikeThreshold || yawChange <= -spikeThreshold)
     {
       yawChange = 0;
