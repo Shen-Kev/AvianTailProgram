@@ -170,7 +170,7 @@ float YawPgain = 4.0;
 float YawIgain = 0;
 float YawDgain = 0.0;
 
-const bool YawPIDOn = false;
+//const bool YawPIDOn = false;
 
 float RCYawScalar = 0.5;
 float YawProportional;
@@ -698,12 +698,12 @@ void mpu6050Input()
     else{
       PitchOutput = RCpitch;
     }
-    if(YawPIDOn) {
-      YawPID();
-    }
-    else {
-      YawOutput = RCyaw;
-    }
+    // if(YawPIDOn) {
+    //   YawPID();
+    // }
+    // else {
+    //   YawOutput = RCyaw;
+    // }
     YawPID();
     //run logic
     tailMovement();
