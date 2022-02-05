@@ -141,7 +141,7 @@ float pitchToCreateLift = 10;
 //Pitch PID controller variables
 const int ArrayLength = 20;
 
-const bool PitchPIDOn = false;
+const bool PitchPIDOn = true;
 
 float PitchPgain = 3.0;
 float PitchIgain = 0;
@@ -169,6 +169,8 @@ float PitchOutput;
 float YawPgain = 4.0;
 float YawIgain = 0;
 float YawDgain = 0.0;
+
+const bool YawPIDOn = false;
 
 float RCYawScalar = 0.5;
 float YawProportional;
@@ -695,6 +697,12 @@ void mpu6050Input()
     }
     else{
       PitchOutput = RCpitch;
+    }
+    if(YawPIDOn) {
+      YawPID();
+    }
+    else {
+      YawOutput = RCyaw;
     }
     YawPID();
     //run logic
