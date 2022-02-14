@@ -1,6 +1,7 @@
 //Teensy Flight Controller- Avian Tail Program- Science Fair Project
 //Author- Kevin Shen
 //Project Start- 10/26/2021
+//First Controlled Flight-2/13/2022
 
 //Instructions for use
 
@@ -107,17 +108,19 @@ const int MODEInputPin = RX5;
 
 //initialize tail variables
 bool inDeadzone = true;
-const float deadZone = 10;
+const float deadZone = 1;
 const float YawDeadzone = 10;
 const float forceToBalenceMAVInPitch = -60; //15 degrees, whatever 15 degrees is for the servo
 const float tailForceOffset = -60;          // 15 degrees as well. So when tail is upright it will completely fufil force to balence MAVinpitch
 float pitchForce;
 float tailForce;
 
+
 //dampener values to scale servo outputs
-float elevatorDampener = 3.0;
+float elevatorDampener = 2.0;
 float AileronDampener = 2.0;
 float tailAileronOffsetDampener = 2.0;
+float servoAngleToTailAngleScalar = 0.5;
 
 //timekeeping varaibles
 float timeInSeconds;
@@ -136,16 +139,16 @@ float pitchChange = 0; //deg/sec
 float pitch = 0;
 float roll = 0;
 float spikeThreshold = 360; //deg/sec
-float pitchToCreateLift = 15;
+float pitchToCreateLift = 20;
 
 //Pitch PID controller variables
 //const int ArrayLength = 20;
 
 #define PITCH_PID_ON true
 
-float PitchPgain = 3.0;
+float PitchPgain = 2.0;
 float PitchIgain = 0;
-float PitchDgain = 0.2;
+float PitchDgain = 1.0;
 
 float RCpitchScalar = 2.0;
 float PitchProportional;
@@ -160,7 +163,7 @@ float PrevPitchError;
 // float AvgPrevPitchError;
 
 //float PitchErrorArray[ArrayLength];
-float PitchDerivativeConstrain = 45;
+float PitchDerivativeConstrain = 90;
 
 float PitchOutput;
 
@@ -367,36 +370,8 @@ void PWMSignalCalculatorMODE()
 //PID Control Loop for pitch
 void PitchPID()
 {
-  //pitchErrorArray keeps track of past 20 pitch error values to average from
-  // for (int i = 0; i < ArrayLength - 1; i++)
-  // {
-  //   PitchErrorArray[i] = PitchErrorArray[i + 1]; //moving everything down one index
-  // }
-
   PrevPitchError = PitchError;
   PitchError = (RCpitch / RCpitchScalar) - pitch + pitchToCreateLift;
-
-  //PitchErrorArray[ArrayLength - 1] = PitchError; //setting "latest" pitch error
-
-  //find average previous pitch error
-  // for (int i = 0; i < ArrayLength / 2; i++)
-  // {
-  //   AvgPrevPitchErrorSum += PitchErrorArray[i];
-  // }
-  // AvgPrevPitchError = AvgPrevPitchErrorSum / (ArrayLength / 2);
-  // AvgPrevPitchErrorSum = 0;
-
-  // //find average pitch error
-  // for (int i = (ArrayLength / 2); i < ArrayLength; i++)
-  // {
-  //   AvgPitchErrorSum += PitchErrorArray[i];
-  //   AvgPitchError = AvgPitchErrorSum / (ArrayLength / 2);
-  // }
-  // AvgPitchError = AvgPitchErrorSum / (ArrayLength / 2);
-  // AvgPitchErrorSum = 0;
-
-  //setting time change to be the difference between start of pitch error average and past pitch error average
-  //timeBetweenAveragePitchError = timeBetweenIMUInputs * (ArrayLength / 2); //10 iterations apart
 
   PitchProportional = PitchError * PitchPgain; //proportional value
 
@@ -430,12 +405,6 @@ void PitchPID()
 //PID Control Loop for Yaw
 void YawPID()
 {
-  //YawErrorArray keeps track of past 20 Yaw error values to average from
-  // for (int i = 0; i < ArrayLength - 1; i++)
-  // {
-  //   YawErrorArray[i] = YawErrorArray[i + 1]; //moving everything down one index
-  // }
-
   PrevYawError = YawError;
   YawError = (RCyaw / RCYawScalar) - yawChange;
   //yaw deadzone to avoid jittering during level flight
@@ -443,28 +412,6 @@ void YawPID()
   {
     YawError = 0;
   }
-
-  // YawErrorArray[ArrayLength - 1] = YawError; //setting "latest" Yaw error
-
-  // //find average previous Yaw error
-  // for (int i = 0; i < ArrayLength / 2; i++)
-  // {
-  //   AvgPrevYawErrorSum += YawErrorArray[i];
-  // }
-  // AvgPrevYawError = AvgPrevYawErrorSum / (ArrayLength / 2);
-  // AvgPrevYawErrorSum = 0;
-
-  // //find average Yaw error
-  // for (int i = (ArrayLength / 2); i < ArrayLength; i++)
-  // {
-  //   AvgYawErrorSum += YawErrorArray[i];
-  //   AvgYawError = AvgYawErrorSum / (ArrayLength / 2);
-  // }
-  // AvgYawError = AvgYawErrorSum / (ArrayLength / 2);
-  // AvgYawErrorSum = 0;
-
-  // //setting time change to be the difference between start of Yaw error average and past Yaw error average
-  // timeBetweenAverageYawError = timeBetweenIMUInputs * (ArrayLength / 2); //10 iterations apart
 
   YawProportional = YawError * YawPgain; //proportional value
 
@@ -501,7 +448,7 @@ void tailMovement()
     rotatorServoOutput = 0.01; //no dividing by 0
   }
 
-  tailForce = pitchForce / cos(radians(rotatorServoOutput)); //calculate force tail needs to generate
+  tailForce = pitchForce / cos(radians(rotatorServoOutput*servoAngleToTailAngleScalar)); //calculate force tail needs to generate
 
   elevatorServoOutput = tailForce - tailForceOffset; //calculate elevator force based on tail force
 
@@ -522,7 +469,7 @@ void ailerons()
 //writes signal to actuators
 void write()
 {
-  elevatorServo.write(elevatorServoOutput + elevatorServoOutputTrim);
+  elevatorServo.write(180-(elevatorServoOutput + elevatorServoOutputTrim));
   rotatorServo.write(rotatorServoOutput + rotatorServoOutputTrim);
   rightAileronServo.write(rightAileronServoOutput + rightAileronServoOutputTrim);
   leftAileronServo.write(leftAileronServoOutput + leftAileronServoOutputTrim);
@@ -560,8 +507,6 @@ void SDSetup()
     file.print("\t");
     file.print("pitch(deg)");
     file.print("\t");
-    file.print("pitchChange(deg/s)");
-    file.print("\t");
     file.print("roll(deg)");
     file.print("\t");
 
@@ -588,8 +533,6 @@ void SDSetup()
     file.print("YawOutput");
     file.print("\t");
     file.print("pitchForce");
-    file.print("\t");
-    file.print("tailForce");
     file.print("\t");
     file.print("RCpitch");
     file.print("\t");
@@ -640,9 +583,6 @@ void mpu6050Input()
     mpu.dmpGetQuaternion(&q, fifoBuffer);
     mpu.dmpGetGravity(&gravity, &q);
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-
-    //timeBetweenIMUInputs = timeInSeconds - previousIMUTimeInSeconds;
-    //previousIMUTimeInSeconds = timeInSeconds;
 
     prevYaw = yaw;
     PrevPitchError = pitch;
@@ -716,8 +656,6 @@ void SDOutput()
     file.print("\t");
     file.print(pitch);
     file.print("\t");
-    file.print(pitchChange);
-    file.print("\t");
     file.print(roll);
     file.print("\t");
 
@@ -745,8 +683,6 @@ void SDOutput()
     file.print("\t");
     file.print(pitchForce);
     file.print("\t");
-    file.print(tailForce);
-    file.print("\t");
     file.print(RCpitch);
     file.print("\t");
     file.print(PitchOutput);
@@ -756,7 +692,7 @@ void SDOutput()
 
     file.print(dataLog * 100);
     file.print("\t");
-    file.print(MODE * 100);
+    file.print(MODE);
     file.print("\t");
 
     file.print(inDeadzone * 100);
