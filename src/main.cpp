@@ -146,9 +146,9 @@ float pitchToCreateLift = 20;
 
 #define PITCH_PID_ON true
 
-float PitchPgain = 2.0;
+float PitchPgain = 1.8;
 float PitchIgain = 0;
-float PitchDgain = 1.0;
+float PitchDgain = 1.1;
 
 float RCpitchScalar = 2.0;
 float PitchProportional;
@@ -169,7 +169,7 @@ float PitchOutput;
 
 //Yaw PID controller variables
 
-float YawPgain = 4.0;
+float YawPgain = 3.6;
 float YawIgain = 0;
 float YawDgain = 0.0;
 
