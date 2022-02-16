@@ -142,7 +142,6 @@ float spikeThreshold = 360; //deg/sec
 float pitchToCreateLift = 20;
 
 //Pitch PID controller variables
-//const int ArrayLength = 20;
 
 #define PITCH_PID_ON true
 
@@ -157,10 +156,6 @@ float PitchIntegralSaturationLimit = 45;
 float PitchDerivative;
 float PitchError;
 float PrevPitchError;
-// float AvgPitchErrorSum;
-// float AvgPitchError;
-// float AvgPrevPitchErrorSum;
-// float AvgPrevPitchError;
 
 //float PitchErrorArray[ArrayLength];
 float PitchDerivativeConstrain = 90;
@@ -173,7 +168,7 @@ float YawPgain = 3.6;
 float YawIgain = 0;
 float YawDgain = 0.0;
 
-#define YAW_PID_ON false
+#define YAW_PID_ON true
 
 float RCYawScalar = 0.5;
 float YawProportional;
@@ -182,11 +177,6 @@ float YawIntegralSaturationLimit = 45;
 float YawDerivative;
 float YawError;
 float PrevYawError;
-// float AvgYawErrorSum;
-// float AvgYawError;
-// float AvgPrevYawErrorSum;
-// float AvgPrevYawError;
-//float YawErrorArray[ArrayLength];
 float YawDerivativeConstrain = 45;
 
 float YawOutput;
@@ -514,8 +504,8 @@ void SDSetup()
     file.print("\t");
     file.print("PitchProportional");
     file.print("\t");
-    file.print("PitchIntegral");
-    file.print("\t");
+    // file.print("PitchIntegral");
+    // file.print("\t");
     file.print("PitchDerivative");
     file.print("\t");
 
@@ -523,10 +513,10 @@ void SDSetup()
     file.print("\t");
     file.print("YawProportional");
     file.print("\t");
-    file.print("YawIntegral");
-    file.print("\t");
-    file.print("YawDerivative");
-    file.print("\t");
+    // file.print("YawIntegral");
+    // file.print("\t");
+    // file.print("YawDerivative");
+    // file.print("\t");
 
     file.print("RCyaw");
     file.print("\t");
@@ -663,8 +653,8 @@ void SDOutput()
     file.print("\t");
     file.print(PitchProportional);
     file.print("\t");
-    file.print(PitchIntegral);
-    file.print("\t");
+    // file.print(PitchIntegral);
+    // file.print("\t");
     file.print(PitchDerivative);
     file.print("\t");
 
@@ -672,10 +662,10 @@ void SDOutput()
     file.print("\t");
     file.print(YawProportional);
     file.print("\t");
-    file.print(YawIntegral);
-    file.print("\t");
-    file.print(YawDerivative);
-    file.print("\t");
+    // file.print(YawIntegral);
+    // file.print("\t");
+    // file.print(YawDerivative);
+    // file.print("\t");
 
     file.print(RCyaw);
     file.print("\t");
