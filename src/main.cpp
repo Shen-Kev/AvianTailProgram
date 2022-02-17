@@ -145,9 +145,9 @@ float pitchToCreateLift = 20;
 
 #define PITCH_PID_ON true
 
-float PitchPgain = 1.8;
+float PitchPgain = 2.2;
 float PitchIgain = 0;
-float PitchDgain = 1.1;
+float PitchDgain = 1.0;
 
 float RCpitchScalar = 2.0;
 float PitchProportional;
@@ -164,7 +164,7 @@ float PitchOutput;
 
 //Yaw PID controller variables
 
-float YawPgain = 3.6;
+float YawPgain = 4.4;
 float YawIgain = 0;
 float YawDgain = 0.0;
 
@@ -611,7 +611,7 @@ void mpu6050Input()
       pitchChange = 0;
     }
 
-    //run PID loops
+    //run control loops
     #if PITCH_PID_ON
       PitchPID();
     #else
