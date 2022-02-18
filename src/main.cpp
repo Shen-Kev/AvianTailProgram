@@ -80,7 +80,7 @@ float leftAileronServoOutput = 90;
 
 //servo trim
 int elevatorServoOutputTrim = 0;
-int rotatorServoOutputTrim = 0;
+int rotatorServoOutputTrim = 5;
 int rightAileronServoOutputTrim = 0;
 int leftAileronServoOutputTrim = 0;
 
@@ -147,7 +147,7 @@ float pitchToCreateLift = 20;
 
 float PitchPgain = 2.2;
 float PitchIgain = 0;
-float PitchDgain = 1.0;
+float PitchDgain = 1.0;  
 
 float RCpitchScalar = 2.0;
 float PitchProportional;
