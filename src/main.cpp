@@ -139,13 +139,13 @@ float pitchChange = 0; //deg/sec
 float pitch = 0;
 float roll = 0;
 float spikeThreshold = 360; //deg/sec
-float pitchToCreateLift = 20;
+float pitchToCreateLift = 25;
 
 //Pitch PID controller variables
 
 #define PITCH_PID_ON true
 
-float PitchPgain = 2.2;
+float PitchPgain = 2.0;
 float PitchIgain = 0;
 float PitchDgain = 1.0;  
 
@@ -164,7 +164,7 @@ float PitchOutput;
 
 //Yaw PID controller variables
 
-float YawPgain = 4.4;
+float YawPgain = 4.0;
 float YawIgain = 0;
 float YawDgain = 0.0;
 
