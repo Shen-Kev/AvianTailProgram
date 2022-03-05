@@ -152,7 +152,7 @@ float PitchDgain = 1.0;
 float RCpitchScalar = 2.0;
 float PitchProportional;
 float PitchIntegral;
-float PitchIntegralSaturationLimit = 60;
+float PitchIntegralSaturationLimit = 70;
 float PitchDerivative;
 float PitchError;
 float PrevPitchError;
@@ -164,7 +164,7 @@ float PitchOutput;
 
 //Yaw PID controller variables
 
-float YawPgain = 4.0;
+float YawPgain = 5.0;
 float YawIgain = 0;
 float YawDgain = 0.0;
 
