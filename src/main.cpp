@@ -145,14 +145,14 @@ float pitchToCreateLift = 25;
 
 #define PITCH_PID_ON true
 
-float PitchPgain = 2.0;
+float PitchPgain = 1.8;
 float PitchIgain = 0;
 float PitchDgain = 1.0;  
 
 float RCpitchScalar = 2.0;
 float PitchProportional;
 float PitchIntegral;
-float PitchIntegralSaturationLimit = 45;
+float PitchIntegralSaturationLimit = 60;
 float PitchDerivative;
 float PitchError;
 float PrevPitchError;
