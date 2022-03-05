@@ -147,18 +147,18 @@ float pitchToCreateLift = 25;
 
 float PitchPgain = 1.8;
 float PitchIgain = 0;
-float PitchDgain = 1.0;  
+float PitchDgain = 1.2;  
 
 float RCpitchScalar = 2.0;
 float PitchProportional;
 float PitchIntegral;
-float PitchIntegralSaturationLimit = 70;
+float PitchIntegralSaturationLimit = 60;
 float PitchDerivative;
 float PitchError;
 float PrevPitchError;
 
 //float PitchErrorArray[ArrayLength];
-float PitchDerivativeConstrain = 90;
+float PitchDerivativeConstrain = 120;
 
 float PitchOutput;
 
@@ -177,7 +177,7 @@ float YawIntegralSaturationLimit = 45;
 float YawDerivative;
 float YawError;
 float PrevYawError;
-float YawDerivativeConstrain = 45;
+float YawDerivativeConstrain = 60;
 
 float YawOutput;
 
