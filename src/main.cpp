@@ -147,7 +147,7 @@ float pitchToCreateLift = 25;
 
 float PitchPgain = 1.8;
 float PitchIgain = 0;
-float PitchDgain = 1.2;  
+float PitchDgain = 1.0;  
 
 float RCpitchScalar = 2.0;
 float PitchProportional;
@@ -158,13 +158,13 @@ float PitchError;
 float PrevPitchError;
 
 //float PitchErrorArray[ArrayLength];
-float PitchDerivativeConstrain = 120;
+float PitchDerivativeConstrain = 90;
 
 float PitchOutput;
 
 //Yaw PID controller variables
 
-float YawPgain = 5.0;
+float YawPgain = 4.0;
 float YawIgain = 0;
 float YawDgain = 0.0;
 
@@ -177,7 +177,7 @@ float YawIntegralSaturationLimit = 45;
 float YawDerivative;
 float YawError;
 float PrevYawError;
-float YawDerivativeConstrain = 60;
+float YawDerivativeConstrain = 45;
 
 float YawOutput;
 
