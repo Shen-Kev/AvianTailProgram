@@ -147,7 +147,7 @@ float pitchToCreateLift = 25;
 
 float PitchPgain = 1.8;
 float PitchIgain = 0;
-float PitchDgain = 1.0;  
+float PitchDgain = 0.9;  
 
 float RCpitchScalar = 2.0;
 float PitchProportional;
